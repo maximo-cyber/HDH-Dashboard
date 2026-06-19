@@ -1,0 +1,2665 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FORCHICS Board</title>
+<style>
+:root{ color-scheme: light; }
+*{ box-sizing:border-box; }
+body{ margin:0; background:#f6f7f9; color:#1f2430;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; font-size:14px; line-height:1.45;}
+h1,h2,h3{ margin:0; font-weight:650; letter-spacing:.2px; }
+.wrap{ max-width:1280px; margin:0 auto; padding:18px 20px 60px; }
+.top{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:14px; }
+.brand{ font-size:20px; font-weight:700; letter-spacing:2px; }
+.brand small{ display:block; font-size:11px; letter-spacing:.5px; color:#8a92a3; font-weight:500; margin-top:2px; }
+.toolbar{ display:flex; gap:8px; flex-wrap:wrap; }
+.btn{ border:1px solid #d5d9e0; background:#fff; color:#374151; border-radius:8px; padding:7px 12px; font-size:12.5px; cursor:pointer; font-weight:550; }
+.btn:hover{ background:#f0f2f5; }
+.btn.primary{ background:#1f2430; color:#fff; border-color:#1f2430; }
+.btn.primary:hover{ background:#333a4a; }
+.btn.sync{ background:#2563eb; color:#fff; border-color:#2563eb; }
+.btn.sync[data-n="0"]{ opacity:.45; }
+.tabs{ display:flex; gap:4px; border-bottom:1px solid #e3e6ea; margin-bottom:16px; flex-wrap:wrap; }
+.tab{ padding:9px 14px; cursor:pointer; border:none; background:none; font-size:14px; color:#6b7280; font-weight:600; border-bottom:2px solid transparent; }
+.tab.active{ color:#1f2430; border-bottom-color:#1f2430; }
+.subtoggle{ display:flex; gap:6px; margin-bottom:14px; }
+.subtoggle .btn.on{ background:#1f2430; color:#fff; border-color:#1f2430; }
+.section-title{ font-size:12px; text-transform:uppercase; letter-spacing:1.2px; color:#8a92a3; margin:22px 0 10px; font-weight:700; display:flex; align-items:center; gap:8px;}
+.factory-tag{ font-size:10px; background:#eceef2; color:#5b6472; padding:2px 7px; border-radius:20px; letter-spacing:.5px;}
+.grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(244px,1fr)); gap:12px; }
+.card{ background:#fff; border:1px solid #e6e9ee; border-left-width:4px; border-radius:11px; padding:12px 13px; box-shadow:0 1px 2px rgba(20,30,50,.04); }
+.card h3{ font-size:13.5px; line-height:1.3; }
+.card .meta{ display:flex; align-items:center; gap:6px; margin:6px 0 9px; flex-wrap:wrap; }
+.phase{ font-size:10px; font-weight:700; padding:2px 8px; border-radius:20px; letter-spacing:.4px; text-transform:uppercase; }
+.phase.ready{ background:#dcfce7; color:#15803d; }
+.phase.in-production{ background:#dbeafe; color:#1d4ed8; }
+.phase.design{ background:#eef0f3; color:#5b6472; }
+.phase.paused{ background:#f3f4f6; color:#9aa1ad; }
+.phase.live{ background:#ccfbf1; color:#0f766e; }
+.facets{ display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+.pill{ display:flex; align-items:center; justify-content:space-between; gap:6px; border-radius:7px; padding:5px 8px; cursor:pointer; user-select:none; border:1px solid transparent; font-size:11px; }
+.pill .lab{ font-weight:600; opacity:.75; text-transform:capitalize; }
+.pill .val{ font-weight:700; }
+.pill:hover{ filter:brightness(.97); outline:1px solid rgba(0,0,0,.06); }
+.s-not-started{ background:#eef0f2; color:#6b7280; }
+.s-doing{ background:#dbeafe; color:#1d4ed8; }
+.s-needs-review{ background:#ede9fe; color:#6d28d9; }
+.s-stuck{ background:#fef3c7; color:#b45309; }
+.s-approved{ background:#dcfce7; color:#15803d; }
+.bd-not-started{ border-left-color:#cbd2db; }
+.bd-doing{ border-left-color:#3b82f6; }
+.bd-needs-review{ border-left-color:#8b5cf6; }
+.bd-stuck{ border-left-color:#f59e0b; }
+.bd-approved{ border-left-color:#22c55e; }
+.note{ font-size:11.5px; color:#7a8294; margin-top:9px; line-height:1.35; }
+.cardfoot{ display:flex; align-items:center; justify-content:space-between; margin-top:10px; gap:6px; }
+.miniqa{ font-size:11px; border:1px solid #d5d9e0; background:#fff; border-radius:7px; padding:4px 9px; cursor:pointer; color:#374151; font-weight:600;}
+.miniqa:hover{ background:#f0f2f5; }
+.mdlink{ font-size:10.5px; color:#aab0bd; }
+.cols{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+.col{ background:#eef0f3; border-radius:12px; padding:12px; min-height:200px; }
+.col h2{ font-size:13px; text-transform:uppercase; letter-spacing:1px; color:#5b6472; margin-bottom:10px; display:flex; justify-content:space-between;}
+.tcard{ background:#fff; border:1px solid #e6e9ee; border-left-width:4px; border-radius:9px; padding:9px 11px; margin-bottom:8px; }
+.tcard p{ margin:0 0 7px; font-size:12.5px; line-height:1.35; }
+.tcard .row{ display:flex; align-items:center; gap:6px; justify-content:space-between; }
+.linktag{ font-size:10px; background:#eceef2; color:#5b6472; padding:2px 7px; border-radius:6px;}
+.inbox-area{ display:flex; gap:8px; flex-wrap:wrap; }
+textarea{ flex:1; min-width:280px; min-height:80px; border:1px solid #d5d9e0; border-radius:9px; padding:10px; font:inherit; resize:vertical; }
+.help{ background:#fff; border:1px solid #e6e9ee; border-radius:11px; padding:14px 16px; margin-bottom:16px; color:#5b6472; font-size:12.5px; line-height:1.5;}
+.help b{ color:#1f2430; }
+.next-grp{ margin-bottom:18px; }
+.next-grp h3{ font-size:13px; margin-bottom:8px; }
+.next-item{ background:#fff; border:1px solid #e6e9ee; border-radius:9px; padding:9px 12px; margin-bottom:7px; font-size:12.5px; display:flex; justify-content:space-between; gap:10px; align-items:center;}
+.legend{ display:flex; gap:10px; flex-wrap:wrap; font-size:11px; color:#7a8294; margin-bottom:6px; }
+.legend span{ display:inline-flex; align-items:center; gap:5px; }
+.dot{ width:10px; height:10px; border-radius:3px; display:inline-block; }
+.hidden{ display:none; }
+.muted{ color:#9aa1ad; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="stickytop">
+  <div class="top">
+    <div class="brand">FORCHICS BOARD<small>One dataset · status + daily + inbox + next</small></div>
+    <div class="toolbar">
+      <span id="saveind" class="saveind">● connecting…</span>
+      <button class="btn" onclick="exportJSON()">Export JSON</button>
+      <button class="btn" onclick="resetSeed()">Reset</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="packaging" onclick="setTab('packaging')">📦 Packaging</button>
+    <button class="tab" data-tab="web" onclick="setTab('web')">🌐 Web roadmap</button>
+    <button class="tab" data-tab="daily" onclick="setTab('daily')">Daily</button>
+    <button class="tab" data-tab="next" onclick="setTab('next')">Next</button>
+  </div>
+  </div><!--/stickytop-->
+
+  <div class="legend">
+    <span><i class="dot" style="background:#cbd2db"></i>Not started</span>
+    <span><i class="dot" style="background:#3b82f6"></i>Designing</span>
+    <span><i class="dot" style="background:#14b8a6"></i>Producing samples</span>
+    <span><i class="dot" style="background:#8b5cf6"></i>Needs review (Hamid)</span>
+    <span><i class="dot" style="background:#22c55e"></i>Approved</span>
+    <span><i class="dot" style="background:#ef4444"></i>In production</span>
+    <span><i class="dot" style="background:#f97316"></i>Stuck</span>
+    <span><i class="dot" style="background:#eab308"></i>Paused</span>
+    <span class="muted">· click a part pill to set its status / rename / delete · ＋ to add a part · click a card title for details</span>
+  </div>
+
+  <!-- PACKAGING -->
+  <div id="packaging" class="pane">
+    <div class="filterbar" id="fb-pkg"></div>
+    <div id="pkgbody"></div>
+  </div>
+
+  <!-- WEB -->
+  <div id="web" class="pane hidden">
+    <div class="filterbar" id="fb-web"></div>
+    <div id="webbody"></div>
+  </div>
+
+  <!-- DAILY -->
+  <div id="daily" class="pane hidden">
+    <div class="dailybar">Sort:
+      <select id="sortSel" class="sortsel" onchange="setSort(this.value)">
+        <option value="manual">Manual</option>
+        <option value="working">🛠 Working + 🔥 urgent first</option>
+        <option value="urgent">🔥 Urgent first</option>
+        <option value="status">By status</option>
+        <option value="mine">★ Mine first</option>
+        <option value="type">By type</option>
+        <option value="az">A–Z</option>
+      </select>
+      <span style="flex:1"></span>
+      <button class="fchip" onclick="foldAllTasks()">⊟ Collapse cards</button>
+      <button class="fchip" onclick="unfoldAllTasks()">⊞ Expand cards</button>
+    </div>
+    <div class="cols cols4">
+      <div class="col"><h2>We <span class="muted" id="c-we">0</span><button class="addbtn" onclick="addTask('we')">＋</button></h2><div id="lane-we"></div></div>
+      <div class="col"><h2>Hamid <span class="muted" id="c-hamid">0</span><button class="addbtn" onclick="addTask('hamid')">＋</button></h2><div id="lane-hamid"></div></div>
+      <div class="col"><h2>Factories <span class="muted" id="c-factory">0</span><button class="addbtn" onclick="addTask('factory')">＋</button></h2><div id="lane-factory"></div></div>
+      <div class="col"><h2>💡 Ideas <span class="muted" id="c-ideas">0</span><button class="addbtn" onclick="addTask('ideas')">＋</button></h2><div id="lane-ideas"></div></div>
+    </div>
+  </div>
+
+  <!-- NEXT -->
+  <div id="next" class="pane hidden">
+    <div class="help">A first pass at <b>what deserves attention now</b>, computed from the board. For a real prioritized plan against your long-term goals, hit the button — I read the board state and propose the order.</div>
+    <button class="btn primary" style="margin-bottom:18px" onclick="planDay()">Plan my day with Claude</button>
+    <div id="next-content"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script>
+const SEED = {
+  "_meta": {
+    "title": "FORCHICS Board",
+    "version": 1,
+    "last_synced": "2026-06-17T14:40",
+    "facet_statuses": [
+      "not-started",
+      "doing",
+      "needs-review",
+      "stuck",
+      "approved"
+    ],
+    "phases": [
+      "design",
+      "in-production",
+      "ready",
+      "live",
+      "paused"
+    ],
+    "owners": [
+      "we",
+      "hamid",
+      "factory"
+    ],
+    "note": "Operational state only. Product truth lives in the FORCHICS Brain MD files; cards link via mdPath products/<id>.md.",
+    "statuses": [
+      "not-started",
+      "designing",
+      "producing-samples",
+      "needs-review",
+      "approved",
+      "in-production",
+      "paused"
+    ]
+  },
+  "lines": {
+    "eyebrow-eyelash": {
+      "label": "Eyelash / Eyebrow",
+      "factory": "BIYING"
+    },
+    "hair": {
+      "label": "Hair",
+      "factory": "BIYING"
+    },
+    "perfume": {
+      "label": "Perfume",
+      "factory": "ADICO"
+    },
+    "arousal": {
+      "label": "Arousal",
+      "factory": "ADICO"
+    },
+    "supplements": {
+      "label": "Supplements",
+      "factory": "ADICO"
+    }
+  },
+  "products": [
+    {
+      "id": "forlash-eyelash-serum",
+      "name": "ForLash Eyelash Serum",
+      "line": "eyebrow-eyelash",
+      "active": true,
+      "notes": "",
+      "items": [
+        {
+          "label": "Bottle",
+          "status": "approved"
+        },
+        {
+          "label": "Box",
+          "status": "approved"
+        },
+        {
+          "label": "Manual",
+          "status": "approved"
+        },
+        {
+          "label": "Legal",
+          "status": "approved"
+        }
+      ]
+    },
+    {
+      "id": "forbrow-eyebrow-serum",
+      "name": "ForBrow Eyebrow Serum",
+      "line": "eyebrow-eyelash",
+      "active": true,
+      "notes": "",
+      "items": [
+        {
+          "label": "Bottle",
+          "status": "approved"
+        },
+        {
+          "label": "Box",
+          "status": "approved"
+        },
+        {
+          "label": "Manual",
+          "status": "approved"
+        },
+        {
+          "label": "Legal",
+          "status": "approved"
+        }
+      ]
+    },
+    {
+      "id": "better-than-falsies-mascara",
+      "name": "Better Than Falsies Mascara",
+      "line": "eyebrow-eyelash",
+      "active": true,
+      "notes": "",
+      "items": [
+        {
+          "label": "Bottle",
+          "status": "approved"
+        },
+        {
+          "label": "Box",
+          "status": "approved"
+        },
+        {
+          "label": "Manual",
+          "status": "approved"
+        },
+        {
+          "label": "Legal",
+          "status": "approved"
+        }
+      ]
+    },
+    {
+      "id": "eyelash-primer",
+      "name": "Eyelash Primer",
+      "line": "eyebrow-eyelash",
+      "active": true,
+      "notes": "Approved — pending correct B&W Amazon FNSKU (current file has retail EAN-13 0850066892855).",
+      "items": [
+        {
+          "label": "Bottle",
+          "status": "approved"
+        },
+        {
+          "label": "Box",
+          "status": "approved"
+        },
+        {
+          "label": "Manual",
+          "status": "approved"
+        },
+        {
+          "label": "Legal",
+          "status": "approved"
+        }
+      ]
+    },
+    {
+      "id": "2-in-1-primer-mascara",
+      "name": "2-in-1 Primer + Mascara",
+      "line": "eyebrow-eyelash",
+      "active": true,
+      "notes": "Approved — pending correct B&W Amazon FNSKU (current file has a retail EAN-13).",
+      "items": [
+        {
+          "label": "Bottle",
+          "status": "approved"
+        },
+        {
+          "label": "Box",
+          "status": "approved"
+        },
+        {
+          "label": "Manual",
+          "status": "approved"
+        },
+        {
+          "label": "Legal",
+          "status": "approved"
+        }
+      ]
+    },
+    {
+      "id": "lash-curler",
+      "name": "Lash Curler",
+      "line": "eyebrow-eyelash",
+      "active": true,
+      "notes": "Not approved yet — box & dielines / design file still pending.",
+      "items": [
+        {
+          "label": "Bottle",
+          "status": "needs-review"
+        },
+        {
+          "label": "Box",
+          "status": "needs-review"
+        },
+        {
+          "label": "Manual",
+          "status": "needs-review"
+        },
+        {
+          "label": "Legal",
+          "status": "needs-review"
+        }
+      ]
+    },
+    {
+      "id": "forhair-hair-growth-shampoo",
+      "name": "ForHair Hair Growth Shampoo",
+      "line": "hair",
+      "active": true,
+      "notes": "Approved — pending correct B&W Amazon FNSKU (current file has retail EAN-13 0850066892688).",
+      "items": [
+        {
+          "label": "Bottle",
+          "status": "approved"
+        },
+        {
+          "label": "Box",
+          "status": "approved"
+        },
+        {
+          "label": "Manual",
+          "status": "approved"
+        },
+        {
+          "label": "Legal",
+          "status": "approved"
+        }
+      ]
+    },
+    {
+      "id": "forhair-hair-growth-conditioner",
+      "name": "ForHair Hair Growth Conditioner",
+      "line": "hair",
+      "active": true,
+      "notes": "Approved — pending correct B&W Amazon FNSKU (current file has retail EAN-13 0850066892695).",
+      "items": [
+        {
+          "label": "Bottle",
+          "status": "approved"
+        },
+        {
+          "label": "Box",
+          "status": "approved"
+        },
+        {
+          "label": "Manual",
+          "status": "approved"
+        },
+        {
+          "label": "Legal",
+          "status": "approved"
+        }
+      ]
+    },
+    {
+      "id": "forhair-hair-growth-oil-spray",
+      "name": "ForHair Hair Growth Oil Spray",
+      "line": "hair",
+      "active": true,
+      "notes": "",
+      "items": [
+        {
+          "label": "Bottle",
+          "status": "approved"
+        },
+        {
+          "label": "Box",
+          "status": "approved"
+        },
+        {
+          "label": "Manual",
+          "status": "approved"
+        },
+        {
+          "label": "Legal",
+          "status": "approved"
+        }
+      ]
+    },
+    {
+      "id": "forhair-biotin-gummies",
+      "name": "ForHair Biotin Gummies",
+      "line": "hair",
+      "active": true,
+      "notes": "Not approved yet — Frey hasn’t sent the final packaging file (missing from 0613 batch). Also needs Amazon FNSKU.",
+      "items": [
+        {
+          "label": "Bottle",
+          "status": "needs-review"
+        },
+        {
+          "label": "Box",
+          "status": "needs-review"
+        },
+        {
+          "label": "Manual",
+          "status": "needs-review"
+        },
+        {
+          "label": "Legal",
+          "status": "needs-review"
+        }
+      ]
+    },
+    {
+      "id": "forhair-hair-growth-densitiy-supplements",
+      "name": "ForHair Hair Growth & Density Supplements",
+      "line": "hair",
+      "active": true,
+      "notes": "Not approved yet — final design files not seen.",
+      "items": [
+        {
+          "label": "Bottle",
+          "status": "needs-review"
+        },
+        {
+          "label": "Box",
+          "status": "needs-review"
+        },
+        {
+          "label": "Manual",
+          "status": "needs-review"
+        },
+        {
+          "label": "Legal",
+          "status": "needs-review"
+        }
+      ]
+    },
+    {
+      "id": "forhair-hair-growth-densitiy-supplements-refill",
+      "name": "ForHair Density Supplements — Refill",
+      "line": "hair",
+      "active": true,
+      "notes": "Not approved yet — final design files not seen.",
+      "items": [
+        {
+          "label": "Bottle",
+          "status": "needs-review"
+        },
+        {
+          "label": "Box",
+          "status": "needs-review"
+        },
+        {
+          "label": "Manual",
+          "status": "needs-review"
+        },
+        {
+          "label": "Legal",
+          "status": "needs-review"
+        }
+      ]
+    },
+    {
+      "id": "forhair-anti-hair-loss-spray",
+      "name": "ForHair Anti-Hair Loss Spray",
+      "line": "hair",
+      "active": true,
+      "notes": "Cancelled.",
+      "items": [
+        {
+          "label": "Bottle",
+          "status": "paused"
+        },
+        {
+          "label": "Box",
+          "status": "paused"
+        },
+        {
+          "label": "Manual",
+          "status": "paused"
+        },
+        {
+          "label": "Legal",
+          "status": "paused"
+        }
+      ]
+    },
+    {
+      "id": "leave-in-conditioner-purple",
+      "name": "Leave-in Conditioner — Purple",
+      "line": "hair",
+      "active": true,
+      "notes": "Cancelled.",
+      "items": [
+        {
+          "label": "Bottle",
+          "status": "paused"
+        },
+        {
+          "label": "Box",
+          "status": "paused"
+        },
+        {
+          "label": "Manual",
+          "status": "paused"
+        },
+        {
+          "label": "Legal",
+          "status": "paused"
+        }
+      ]
+    },
+    {
+      "id": "leave-in-conditioner-pink",
+      "name": "Leave-in Conditioner — Pink",
+      "line": "hair",
+      "active": true,
+      "notes": "Cancelled.",
+      "items": [
+        {
+          "label": "Bottle",
+          "status": "paused"
+        },
+        {
+          "label": "Box",
+          "status": "paused"
+        },
+        {
+          "label": "Manual",
+          "status": "paused"
+        },
+        {
+          "label": "Legal",
+          "status": "paused"
+        }
+      ]
+    },
+    {
+      "id": "leave-in-conditioner-blue",
+      "name": "Leave-in Conditioner — Blue",
+      "line": "hair",
+      "active": true,
+      "notes": "Cancelled.",
+      "items": [
+        {
+          "label": "Bottle",
+          "status": "paused"
+        },
+        {
+          "label": "Box",
+          "status": "paused"
+        },
+        {
+          "label": "Manual",
+          "status": "paused"
+        },
+        {
+          "label": "Legal",
+          "status": "paused"
+        }
+      ]
+    },
+    {
+      "id": "scalp-cooling-swab",
+      "name": "Scalp Cooling Swab",
+      "line": "hair",
+      "active": true,
+      "notes": "Cancelled.",
+      "items": [
+        {
+          "label": "Bottle",
+          "status": "paused"
+        },
+        {
+          "label": "Box",
+          "status": "paused"
+        },
+        {
+          "label": "Manual",
+          "status": "paused"
+        },
+        {
+          "label": "Legal",
+          "status": "paused"
+        }
+      ]
+    },
+    {
+      "id": "hair-milk-essence",
+      "name": "Hair Milk Essence",
+      "line": "hair",
+      "active": true,
+      "notes": "Cancelled.",
+      "items": [
+        {
+          "label": "Bottle",
+          "status": "paused"
+        },
+        {
+          "label": "Box",
+          "status": "paused"
+        },
+        {
+          "label": "Manual",
+          "status": "paused"
+        },
+        {
+          "label": "Legal",
+          "status": "paused"
+        }
+      ]
+    },
+    {
+      "id": "temptation",
+      "name": "Temptation (Chanel Chance)",
+      "line": "perfume",
+      "active": true,
+      "notes": "In production.",
+      "items": [
+        {
+          "label": "Bottle",
+          "status": "in-production"
+        },
+        {
+          "label": "Box",
+          "status": "in-production"
+        },
+        {
+          "label": "Manual",
+          "status": "in-production"
+        },
+        {
+          "label": "Legal",
+          "status": "in-production"
+        }
+      ]
+    },
+    {
+      "id": "seduction",
+      "name": "Seduction (Glossier You)",
+      "line": "perfume",
+      "active": true,
+      "notes": "In production.",
+      "items": [
+        {
+          "label": "Bottle",
+          "status": "in-production"
+        },
+        {
+          "label": "Box",
+          "status": "in-production"
+        },
+        {
+          "label": "Manual",
+          "status": "in-production"
+        },
+        {
+          "label": "Legal",
+          "status": "in-production"
+        }
+      ]
+    },
+    {
+      "id": "devotion",
+      "name": "Devotion (Paradoxe)",
+      "line": "perfume",
+      "active": true,
+      "notes": "In production.",
+      "items": [
+        {
+          "label": "Bottle",
+          "status": "in-production"
+        },
+        {
+          "label": "Box",
+          "status": "in-production"
+        },
+        {
+          "label": "Manual",
+          "status": "in-production"
+        },
+        {
+          "label": "Legal",
+          "status": "in-production"
+        }
+      ]
+    },
+    {
+      "id": "arousal-hair-mist",
+      "name": "Arousal Hair Mist",
+      "line": "arousal",
+      "active": true,
+      "notes": "In production.",
+      "items": [
+        {
+          "label": "Bottle",
+          "status": "in-production"
+        },
+        {
+          "label": "Box",
+          "status": "in-production"
+        },
+        {
+          "label": "Manual",
+          "status": "in-production"
+        },
+        {
+          "label": "Legal",
+          "status": "in-production"
+        }
+      ]
+    },
+    {
+      "id": "arousal-body-oil",
+      "name": "Arousal Body Oil",
+      "line": "arousal",
+      "active": true,
+      "notes": "In production.",
+      "items": [
+        {
+          "label": "Bottle",
+          "status": "in-production"
+        },
+        {
+          "label": "Box",
+          "status": "in-production"
+        },
+        {
+          "label": "Manual",
+          "status": "in-production"
+        },
+        {
+          "label": "Legal",
+          "status": "in-production"
+        }
+      ]
+    },
+    {
+      "id": "allure-body-mist",
+      "name": "Allure Body Mist",
+      "line": "arousal",
+      "active": true,
+      "notes": "In production.",
+      "items": [
+        {
+          "label": "Bottle",
+          "status": "in-production"
+        },
+        {
+          "label": "Box",
+          "status": "in-production"
+        },
+        {
+          "label": "Manual",
+          "status": "in-production"
+        },
+        {
+          "label": "Legal",
+          "status": "in-production"
+        }
+      ]
+    },
+    {
+      "id": "all-in-one-female-supplement",
+      "name": "All In One Female Supplement",
+      "line": "supplements",
+      "active": true,
+      "notes": "Manual in progress; barcode sent by Estefania; Amazon barcode needed.",
+      "items": [
+        {
+          "label": "Bottle",
+          "status": "approved"
+        },
+        {
+          "label": "Tin canister",
+          "status": "not-started"
+        },
+        {
+          "label": "Big box",
+          "status": "designing"
+        },
+        {
+          "label": "Mixer",
+          "status": "not-started"
+        },
+        {
+          "label": "Legal check",
+          "status": "designing"
+        },
+        {
+          "label": "Manual",
+          "status": "needs-review"
+        }
+      ]
+    },
+    {
+      "id": "collagen-beauty-powder-strawberry-cheesecake",
+      "name": "Collagen Beauty Powder — Strawberry Cheesecake",
+      "line": "supplements",
+      "active": true,
+      "notes": "",
+      "items": [
+        {
+          "label": "Bottle",
+          "status": "designing"
+        },
+        {
+          "label": "Box",
+          "status": "designing"
+        },
+        {
+          "label": "Manual",
+          "status": "designing"
+        },
+        {
+          "label": "Legal",
+          "status": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "gut-health",
+      "name": "Gut Health",
+      "line": "supplements",
+      "active": true,
+      "notes": "",
+      "items": [
+        {
+          "label": "Bottle",
+          "status": "designing"
+        },
+        {
+          "label": "Box",
+          "status": "designing"
+        },
+        {
+          "label": "Manual",
+          "status": "not-started"
+        },
+        {
+          "label": "Legal",
+          "status": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "advanced-pms-support",
+      "name": "Advanced PMS Support",
+      "line": "supplements",
+      "active": true,
+      "notes": "Finalize manual with transparent capsules.",
+      "items": [
+        {
+          "label": "Bottle",
+          "status": "designing"
+        },
+        {
+          "label": "Box",
+          "status": "designing"
+        },
+        {
+          "label": "Manual",
+          "status": "needs-review"
+        },
+        {
+          "label": "Legal",
+          "status": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "daily-debloat",
+      "name": "Daily Debloat",
+      "line": "supplements",
+      "active": true,
+      "notes": "Finalize manual with transparent capsules.",
+      "items": [
+        {
+          "label": "Bottle",
+          "status": "designing"
+        },
+        {
+          "label": "Box",
+          "status": "designing"
+        },
+        {
+          "label": "Manual",
+          "status": "needs-review"
+        },
+        {
+          "label": "Legal",
+          "status": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "zero-body-odor",
+      "name": "Zero Body Odor",
+      "line": "supplements",
+      "active": true,
+      "notes": "Finalize manual with transparent capsules.",
+      "items": [
+        {
+          "label": "Bottle",
+          "status": "designing"
+        },
+        {
+          "label": "Box",
+          "status": "designing"
+        },
+        {
+          "label": "Manual",
+          "status": "needs-review"
+        },
+        {
+          "label": "Legal",
+          "status": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "liver-detox",
+      "name": "Liver Detox",
+      "line": "supplements",
+      "active": false,
+      "notes": "PAUSED.",
+      "items": [
+        {
+          "label": "Bottle",
+          "status": "paused"
+        },
+        {
+          "label": "Box",
+          "status": "paused"
+        },
+        {
+          "label": "Manual",
+          "status": "paused"
+        },
+        {
+          "label": "Legal",
+          "status": "paused"
+        }
+      ]
+    },
+    {
+      "id": "womens-omega-glow",
+      "name": "Women's Omega Glow",
+      "line": "supplements",
+      "active": false,
+      "notes": "PAUSED.",
+      "items": [
+        {
+          "label": "Bottle",
+          "status": "paused"
+        },
+        {
+          "label": "Box",
+          "status": "paused"
+        },
+        {
+          "label": "Manual",
+          "status": "paused"
+        },
+        {
+          "label": "Legal",
+          "status": "paused"
+        }
+      ]
+    }
+  ],
+  "web": [
+    {
+      "id": "pdp-forlash-eyelash-serum",
+      "name": "ForLash Eyelash Serum",
+      "group": "pdp",
+      "notes": "",
+      "items": [
+        {
+          "label": "Assets",
+          "status": "not-started"
+        },
+        {
+          "label": "Layout",
+          "status": "not-started"
+        },
+        {
+          "label": "Carousel",
+          "status": "not-started"
+        },
+        {
+          "label": "Offer",
+          "status": "not-started"
+        },
+        {
+          "label": "Copy",
+          "status": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "pdp-forbrow-eyebrow-serum",
+      "name": "ForBrow Eyebrow Serum",
+      "group": "pdp",
+      "notes": "",
+      "items": [
+        {
+          "label": "Assets",
+          "status": "not-started"
+        },
+        {
+          "label": "Layout",
+          "status": "not-started"
+        },
+        {
+          "label": "Carousel",
+          "status": "not-started"
+        },
+        {
+          "label": "Offer",
+          "status": "not-started"
+        },
+        {
+          "label": "Copy",
+          "status": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "pdp-better-than-falsies-mascara",
+      "name": "Better Than Falsies Mascara",
+      "group": "pdp",
+      "notes": "",
+      "items": [
+        {
+          "label": "Assets",
+          "status": "not-started"
+        },
+        {
+          "label": "Layout",
+          "status": "not-started"
+        },
+        {
+          "label": "Carousel",
+          "status": "not-started"
+        },
+        {
+          "label": "Offer",
+          "status": "not-started"
+        },
+        {
+          "label": "Copy",
+          "status": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "pdp-eyelash-primer",
+      "name": "Eyelash Primer",
+      "group": "pdp",
+      "notes": "",
+      "items": [
+        {
+          "label": "Assets",
+          "status": "not-started"
+        },
+        {
+          "label": "Layout",
+          "status": "not-started"
+        },
+        {
+          "label": "Carousel",
+          "status": "not-started"
+        },
+        {
+          "label": "Offer",
+          "status": "not-started"
+        },
+        {
+          "label": "Copy",
+          "status": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "pdp-2-in-1-primer-mascara",
+      "name": "2-in-1 Primer + Mascara",
+      "group": "pdp",
+      "notes": "",
+      "items": [
+        {
+          "label": "Assets",
+          "status": "not-started"
+        },
+        {
+          "label": "Layout",
+          "status": "not-started"
+        },
+        {
+          "label": "Carousel",
+          "status": "not-started"
+        },
+        {
+          "label": "Offer",
+          "status": "not-started"
+        },
+        {
+          "label": "Copy",
+          "status": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "pdp-lash-curler",
+      "name": "Lash Curler",
+      "group": "pdp",
+      "notes": "",
+      "items": [
+        {
+          "label": "Assets",
+          "status": "not-started"
+        },
+        {
+          "label": "Layout",
+          "status": "not-started"
+        },
+        {
+          "label": "Carousel",
+          "status": "not-started"
+        },
+        {
+          "label": "Offer",
+          "status": "not-started"
+        },
+        {
+          "label": "Copy",
+          "status": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "pdp-forhair-hair-growth-shampoo",
+      "name": "ForHair Hair Growth Shampoo",
+      "group": "pdp",
+      "notes": "",
+      "items": [
+        {
+          "label": "Assets",
+          "status": "not-started"
+        },
+        {
+          "label": "Layout",
+          "status": "not-started"
+        },
+        {
+          "label": "Carousel",
+          "status": "not-started"
+        },
+        {
+          "label": "Offer",
+          "status": "not-started"
+        },
+        {
+          "label": "Copy",
+          "status": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "pdp-forhair-hair-growth-conditioner",
+      "name": "ForHair Hair Growth Conditioner",
+      "group": "pdp",
+      "notes": "",
+      "items": [
+        {
+          "label": "Assets",
+          "status": "not-started"
+        },
+        {
+          "label": "Layout",
+          "status": "not-started"
+        },
+        {
+          "label": "Carousel",
+          "status": "not-started"
+        },
+        {
+          "label": "Offer",
+          "status": "not-started"
+        },
+        {
+          "label": "Copy",
+          "status": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "pdp-forhair-hair-growth-oil-spray",
+      "name": "ForHair Hair Growth Oil Spray",
+      "group": "pdp",
+      "notes": "",
+      "items": [
+        {
+          "label": "Assets",
+          "status": "not-started"
+        },
+        {
+          "label": "Layout",
+          "status": "not-started"
+        },
+        {
+          "label": "Carousel",
+          "status": "not-started"
+        },
+        {
+          "label": "Offer",
+          "status": "not-started"
+        },
+        {
+          "label": "Copy",
+          "status": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "pdp-forhair-biotin-gummies",
+      "name": "ForHair Biotin Gummies",
+      "group": "pdp",
+      "notes": "",
+      "items": [
+        {
+          "label": "Assets",
+          "status": "not-started"
+        },
+        {
+          "label": "Layout",
+          "status": "not-started"
+        },
+        {
+          "label": "Carousel",
+          "status": "not-started"
+        },
+        {
+          "label": "Offer",
+          "status": "not-started"
+        },
+        {
+          "label": "Copy",
+          "status": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "pdp-forhair-hair-growth-densitiy-supplements",
+      "name": "ForHair Hair Growth & Density Supplements",
+      "group": "pdp",
+      "notes": "",
+      "items": [
+        {
+          "label": "Assets",
+          "status": "not-started"
+        },
+        {
+          "label": "Layout",
+          "status": "not-started"
+        },
+        {
+          "label": "Carousel",
+          "status": "not-started"
+        },
+        {
+          "label": "Offer",
+          "status": "not-started"
+        },
+        {
+          "label": "Copy",
+          "status": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "pdp-forhair-hair-growth-densitiy-supplements-refill",
+      "name": "ForHair Density Supplements — Refill",
+      "group": "pdp",
+      "notes": "",
+      "items": [
+        {
+          "label": "Assets",
+          "status": "not-started"
+        },
+        {
+          "label": "Layout",
+          "status": "not-started"
+        },
+        {
+          "label": "Carousel",
+          "status": "not-started"
+        },
+        {
+          "label": "Offer",
+          "status": "not-started"
+        },
+        {
+          "label": "Copy",
+          "status": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "pdp-forhair-anti-hair-loss-spray",
+      "name": "ForHair Anti-Hair Loss Spray",
+      "group": "pdp",
+      "notes": "",
+      "items": [
+        {
+          "label": "Assets",
+          "status": "not-started"
+        },
+        {
+          "label": "Layout",
+          "status": "not-started"
+        },
+        {
+          "label": "Carousel",
+          "status": "not-started"
+        },
+        {
+          "label": "Offer",
+          "status": "not-started"
+        },
+        {
+          "label": "Copy",
+          "status": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "pdp-leave-in-conditioner-purple",
+      "name": "Leave-in Conditioner — Purple",
+      "group": "pdp",
+      "notes": "",
+      "items": [
+        {
+          "label": "Assets",
+          "status": "not-started"
+        },
+        {
+          "label": "Layout",
+          "status": "not-started"
+        },
+        {
+          "label": "Carousel",
+          "status": "not-started"
+        },
+        {
+          "label": "Offer",
+          "status": "not-started"
+        },
+        {
+          "label": "Copy",
+          "status": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "pdp-leave-in-conditioner-pink",
+      "name": "Leave-in Conditioner — Pink",
+      "group": "pdp",
+      "notes": "",
+      "items": [
+        {
+          "label": "Assets",
+          "status": "not-started"
+        },
+        {
+          "label": "Layout",
+          "status": "not-started"
+        },
+        {
+          "label": "Carousel",
+          "status": "not-started"
+        },
+        {
+          "label": "Offer",
+          "status": "not-started"
+        },
+        {
+          "label": "Copy",
+          "status": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "pdp-leave-in-conditioner-blue",
+      "name": "Leave-in Conditioner — Blue",
+      "group": "pdp",
+      "notes": "",
+      "items": [
+        {
+          "label": "Assets",
+          "status": "not-started"
+        },
+        {
+          "label": "Layout",
+          "status": "not-started"
+        },
+        {
+          "label": "Carousel",
+          "status": "not-started"
+        },
+        {
+          "label": "Offer",
+          "status": "not-started"
+        },
+        {
+          "label": "Copy",
+          "status": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "pdp-scalp-cooling-swab",
+      "name": "Scalp Cooling Swab",
+      "group": "pdp",
+      "notes": "",
+      "items": [
+        {
+          "label": "Assets",
+          "status": "not-started"
+        },
+        {
+          "label": "Layout",
+          "status": "not-started"
+        },
+        {
+          "label": "Carousel",
+          "status": "not-started"
+        },
+        {
+          "label": "Offer",
+          "status": "not-started"
+        },
+        {
+          "label": "Copy",
+          "status": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "pdp-hair-milk-essence",
+      "name": "Hair Milk Essence",
+      "group": "pdp",
+      "notes": "",
+      "items": [
+        {
+          "label": "Assets",
+          "status": "not-started"
+        },
+        {
+          "label": "Layout",
+          "status": "not-started"
+        },
+        {
+          "label": "Carousel",
+          "status": "not-started"
+        },
+        {
+          "label": "Offer",
+          "status": "not-started"
+        },
+        {
+          "label": "Copy",
+          "status": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "pdp-temptation",
+      "name": "Temptation (Chanel Chance)",
+      "group": "pdp",
+      "notes": "",
+      "items": [
+        {
+          "label": "Assets",
+          "status": "not-started"
+        },
+        {
+          "label": "Layout",
+          "status": "not-started"
+        },
+        {
+          "label": "Carousel",
+          "status": "not-started"
+        },
+        {
+          "label": "Offer",
+          "status": "not-started"
+        },
+        {
+          "label": "Copy",
+          "status": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "pdp-seduction",
+      "name": "Seduction (Glossier You)",
+      "group": "pdp",
+      "notes": "",
+      "items": [
+        {
+          "label": "Assets",
+          "status": "not-started"
+        },
+        {
+          "label": "Layout",
+          "status": "not-started"
+        },
+        {
+          "label": "Carousel",
+          "status": "not-started"
+        },
+        {
+          "label": "Offer",
+          "status": "not-started"
+        },
+        {
+          "label": "Copy",
+          "status": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "pdp-devotion",
+      "name": "Devotion (Paradoxe)",
+      "group": "pdp",
+      "notes": "",
+      "items": [
+        {
+          "label": "Assets",
+          "status": "not-started"
+        },
+        {
+          "label": "Layout",
+          "status": "not-started"
+        },
+        {
+          "label": "Carousel",
+          "status": "not-started"
+        },
+        {
+          "label": "Offer",
+          "status": "not-started"
+        },
+        {
+          "label": "Copy",
+          "status": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "pdp-arousal-hair-mist",
+      "name": "Arousal Hair Mist",
+      "group": "pdp",
+      "notes": "",
+      "items": [
+        {
+          "label": "Assets",
+          "status": "not-started"
+        },
+        {
+          "label": "Layout",
+          "status": "not-started"
+        },
+        {
+          "label": "Carousel",
+          "status": "not-started"
+        },
+        {
+          "label": "Offer",
+          "status": "not-started"
+        },
+        {
+          "label": "Copy",
+          "status": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "pdp-arousal-body-oil",
+      "name": "Arousal Body Oil",
+      "group": "pdp",
+      "notes": "",
+      "items": [
+        {
+          "label": "Assets",
+          "status": "not-started"
+        },
+        {
+          "label": "Layout",
+          "status": "not-started"
+        },
+        {
+          "label": "Carousel",
+          "status": "not-started"
+        },
+        {
+          "label": "Offer",
+          "status": "not-started"
+        },
+        {
+          "label": "Copy",
+          "status": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "pdp-allure-body-mist",
+      "name": "Allure Body Mist",
+      "group": "pdp",
+      "notes": "",
+      "items": [
+        {
+          "label": "Assets",
+          "status": "not-started"
+        },
+        {
+          "label": "Layout",
+          "status": "not-started"
+        },
+        {
+          "label": "Carousel",
+          "status": "not-started"
+        },
+        {
+          "label": "Offer",
+          "status": "not-started"
+        },
+        {
+          "label": "Copy",
+          "status": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "pdp-all-in-one-female-supplement",
+      "name": "All In One Female Supplement",
+      "group": "pdp",
+      "notes": "",
+      "items": [
+        {
+          "label": "Assets",
+          "status": "not-started"
+        },
+        {
+          "label": "Layout",
+          "status": "not-started"
+        },
+        {
+          "label": "Carousel",
+          "status": "not-started"
+        },
+        {
+          "label": "Offer",
+          "status": "not-started"
+        },
+        {
+          "label": "Copy",
+          "status": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "pdp-collagen-beauty-powder-strawberry-cheesecake",
+      "name": "Collagen Beauty Powder — Strawberry Cheesecake",
+      "group": "pdp",
+      "notes": "",
+      "items": [
+        {
+          "label": "Assets",
+          "status": "not-started"
+        },
+        {
+          "label": "Layout",
+          "status": "not-started"
+        },
+        {
+          "label": "Carousel",
+          "status": "not-started"
+        },
+        {
+          "label": "Offer",
+          "status": "not-started"
+        },
+        {
+          "label": "Copy",
+          "status": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "pdp-gut-health",
+      "name": "Gut Health",
+      "group": "pdp",
+      "notes": "",
+      "items": [
+        {
+          "label": "Assets",
+          "status": "not-started"
+        },
+        {
+          "label": "Layout",
+          "status": "not-started"
+        },
+        {
+          "label": "Carousel",
+          "status": "not-started"
+        },
+        {
+          "label": "Offer",
+          "status": "not-started"
+        },
+        {
+          "label": "Copy",
+          "status": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "pdp-advanced-pms-support",
+      "name": "Advanced PMS Support",
+      "group": "pdp",
+      "notes": "",
+      "items": [
+        {
+          "label": "Assets",
+          "status": "not-started"
+        },
+        {
+          "label": "Layout",
+          "status": "not-started"
+        },
+        {
+          "label": "Carousel",
+          "status": "not-started"
+        },
+        {
+          "label": "Offer",
+          "status": "not-started"
+        },
+        {
+          "label": "Copy",
+          "status": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "pdp-daily-debloat",
+      "name": "Daily Debloat",
+      "group": "pdp",
+      "notes": "",
+      "items": [
+        {
+          "label": "Assets",
+          "status": "not-started"
+        },
+        {
+          "label": "Layout",
+          "status": "not-started"
+        },
+        {
+          "label": "Carousel",
+          "status": "not-started"
+        },
+        {
+          "label": "Offer",
+          "status": "not-started"
+        },
+        {
+          "label": "Copy",
+          "status": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "pdp-zero-body-odor",
+      "name": "Zero Body Odor",
+      "group": "pdp",
+      "notes": "",
+      "items": [
+        {
+          "label": "Assets",
+          "status": "not-started"
+        },
+        {
+          "label": "Layout",
+          "status": "not-started"
+        },
+        {
+          "label": "Carousel",
+          "status": "not-started"
+        },
+        {
+          "label": "Offer",
+          "status": "not-started"
+        },
+        {
+          "label": "Copy",
+          "status": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "sidebar",
+      "name": "Sidebar",
+      "group": "page",
+      "notes": "",
+      "items": [
+        {
+          "label": "Assets",
+          "status": "not-started"
+        },
+        {
+          "label": "Layout",
+          "status": "not-started"
+        },
+        {
+          "label": "Copy",
+          "status": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "checkout",
+      "name": "Checkout",
+      "group": "page",
+      "notes": "",
+      "items": [
+        {
+          "label": "Assets",
+          "status": "not-started"
+        },
+        {
+          "label": "Layout",
+          "status": "not-started"
+        },
+        {
+          "label": "Copy",
+          "status": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "cart-drawer",
+      "name": "Cart Drawer",
+      "group": "page",
+      "notes": "",
+      "items": [
+        {
+          "label": "Assets",
+          "status": "not-started"
+        },
+        {
+          "label": "Layout",
+          "status": "not-started"
+        },
+        {
+          "label": "Copy",
+          "status": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "homepage",
+      "name": "Homepage",
+      "group": "page",
+      "notes": "",
+      "items": [
+        {
+          "label": "Assets",
+          "status": "not-started"
+        },
+        {
+          "label": "Layout",
+          "status": "not-started"
+        },
+        {
+          "label": "Copy",
+          "status": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "membership-page",
+      "name": "Membership Page",
+      "group": "page",
+      "notes": "",
+      "items": [
+        {
+          "label": "Assets",
+          "status": "not-started"
+        },
+        {
+          "label": "Layout",
+          "status": "not-started"
+        },
+        {
+          "label": "Copy",
+          "status": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "collection-page",
+      "name": "Collection Page",
+      "group": "page",
+      "notes": "",
+      "items": [
+        {
+          "label": "Assets",
+          "status": "not-started"
+        },
+        {
+          "label": "Layout",
+          "status": "not-started"
+        },
+        {
+          "label": "Copy",
+          "status": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "bundle-pages",
+      "name": "Bundle Pages",
+      "group": "page",
+      "notes": "",
+      "items": [
+        {
+          "label": "Assets",
+          "status": "not-started"
+        },
+        {
+          "label": "Layout",
+          "status": "not-started"
+        },
+        {
+          "label": "Copy",
+          "status": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "ingredients",
+      "name": "Ingredients",
+      "group": "page",
+      "notes": "",
+      "items": [
+        {
+          "label": "Assets",
+          "status": "not-started"
+        },
+        {
+          "label": "Layout",
+          "status": "not-started"
+        },
+        {
+          "label": "Copy",
+          "status": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "faq",
+      "name": "FAQ",
+      "group": "page",
+      "notes": "",
+      "items": [
+        {
+          "label": "Assets",
+          "status": "not-started"
+        },
+        {
+          "label": "Layout",
+          "status": "not-started"
+        },
+        {
+          "label": "Copy",
+          "status": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "about-us",
+      "name": "About Us",
+      "group": "page",
+      "notes": "",
+      "items": [
+        {
+          "label": "Assets",
+          "status": "not-started"
+        },
+        {
+          "label": "Layout",
+          "status": "not-started"
+        },
+        {
+          "label": "Copy",
+          "status": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "experts",
+      "name": "Experts",
+      "group": "page",
+      "notes": "",
+      "items": [
+        {
+          "label": "Assets",
+          "status": "not-started"
+        },
+        {
+          "label": "Layout",
+          "status": "not-started"
+        },
+        {
+          "label": "Copy",
+          "status": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "policy-disclaimers",
+      "name": "Policy Disclaimers",
+      "group": "page",
+      "notes": "",
+      "items": [
+        {
+          "label": "Assets",
+          "status": "not-started"
+        },
+        {
+          "label": "Layout",
+          "status": "not-started"
+        },
+        {
+          "label": "Copy",
+          "status": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "forchics-brain-ai",
+      "name": "ForChics Brain AI",
+      "group": "page",
+      "notes": "",
+      "items": [
+        {
+          "label": "Assets",
+          "status": "not-started"
+        },
+        {
+          "label": "Layout",
+          "status": "not-started"
+        },
+        {
+          "label": "Copy",
+          "status": "not-started"
+        }
+      ]
+    }
+  ],
+  "tasks": [
+    {
+      "id": "t_frey_barcodes",
+      "title": "Frey sent design files for Eyelash/Eyebrow + Hair lines — check they include the Amazon barcodes; request any that are missing",
+      "owner": "we",
+      "status": "designing",
+      "link": "",
+      "type": "packaging",
+      "urgent": false
+    },
+    {
+      "id": "t1",
+      "title": "Eyelash/Eyebrow Carousel PDPs — Hamid approves then we continue",
+      "owner": "hamid",
+      "status": "needs-review",
+      "link": "pdps",
+      "type": "website",
+      "urgent": false
+    },
+    {
+      "id": "t2",
+      "title": "Supplements (non All-in-One) PDPs — need copy from Hamid",
+      "owner": "hamid",
+      "status": "needs-review",
+      "link": "pdps",
+      "type": "website",
+      "urgent": false
+    },
+    {
+      "id": "t3",
+      "title": "Hair Carousel PDPs — need copy from Hamid",
+      "owner": "hamid",
+      "status": "needs-review",
+      "link": "pdps",
+      "type": "website",
+      "urgent": false
+    },
+    {
+      "id": "t4",
+      "title": "Eyelash/Eyebrow PDPs — need copy from Hamid",
+      "owner": "hamid",
+      "status": "needs-review",
+      "link": "pdps",
+      "type": "website",
+      "urgent": false
+    },
+    {
+      "id": "t5",
+      "title": "Review hair line copy pushback",
+      "owner": "hamid",
+      "status": "designing",
+      "link": "",
+      "type": "website",
+      "urgent": false
+    },
+    {
+      "id": "t6",
+      "title": "Frey needs to know barcode must be black & white",
+      "owner": "factory",
+      "status": "designing",
+      "link": "",
+      "type": "packaging",
+      "urgent": false
+    },
+    {
+      "id": "t7",
+      "title": "Frey must confirm they can fix the manuals",
+      "owner": "factory",
+      "status": "paused",
+      "link": "",
+      "type": "packaging",
+      "urgent": false
+    },
+    {
+      "id": "t8",
+      "title": "Add Amazon barcodes for supplements",
+      "owner": "we",
+      "status": "designing",
+      "link": "",
+      "type": "packaging",
+      "urgent": false
+    },
+    {
+      "id": "t9",
+      "title": "Image layout for Supps",
+      "owner": "we",
+      "status": "designing",
+      "link": "",
+      "type": "ops",
+      "urgent": false
+    },
+    {
+      "id": "t10",
+      "title": "Mixer dielines",
+      "owner": "we",
+      "status": "not-started",
+      "link": "",
+      "type": "packaging",
+      "urgent": false
+    },
+    {
+      "id": "t11",
+      "title": "Eyelash/Eyebrow PDPs — Uba is fixing assets (show final look from samples)",
+      "owner": "we",
+      "status": "designing",
+      "link": "pdps",
+      "type": "website",
+      "urgent": false
+    },
+    {
+      "id": "t12",
+      "title": "Hair Carousel PDPs — Uba is fixing assets",
+      "owner": "we",
+      "status": "designing",
+      "link": "pdps",
+      "type": "website",
+      "urgent": false
+    },
+    {
+      "id": "t13",
+      "title": "Finalize manuals for Debloat, Body Odor & PMS (transparent capsules)",
+      "owner": "we",
+      "status": "needs-review",
+      "link": "",
+      "type": "packaging",
+      "urgent": false
+    },
+    {
+      "id": "t14",
+      "title": "Manual for All In One",
+      "owner": "we",
+      "status": "designing",
+      "link": "all-in-one-female-supplement",
+      "type": "packaging",
+      "urgent": false
+    },
+    {
+      "id": "t15",
+      "title": "Lash curler box & dielines",
+      "owner": "we",
+      "status": "not-started",
+      "link": "",
+      "type": "packaging",
+      "urgent": false
+    },
+    {
+      "id": "t16",
+      "title": "Build hair carousels",
+      "owner": "we",
+      "status": "designing",
+      "link": "",
+      "type": "website",
+      "urgent": false
+    },
+    {
+      "id": "t17",
+      "title": "Answer Estefania about barcodes",
+      "owner": "we",
+      "status": "designing",
+      "link": "",
+      "type": "packaging",
+      "urgent": false
+    },
+    {
+      "id": "t18",
+      "title": "Amazon barcodes for all products",
+      "owner": "we",
+      "status": "not-started",
+      "link": "",
+      "type": "packaging",
+      "urgent": false
+    },
+    {
+      "id": "t_frey_newbarcodes",
+      "title": "Tell Frey: corrected B&W Amazon (FNSKU) barcodes are COMING for Eyelash Primer, 2-in-1, Shampoo & Conditioner — their 0613 files have a retail EAN-13.",
+      "owner": "factory",
+      "status": "needs-review",
+      "link": "",
+      "mine": false,
+      "urgent": true,
+      "type": "packaging"
+    },
+    {
+      "id": "t_frey_biotin",
+      "title": "Ask Frey: missing packaging file — ForHair Biotin Gummies was NOT in the 0613 batch. Where is it?",
+      "owner": "factory",
+      "status": "needs-review",
+      "link": "",
+      "mine": false,
+      "urgent": true,
+      "type": "packaging"
+    },
+    {
+      "id": "t_inhouse_fnsku",
+      "title": "In-house team: provide Amazon FNSKUs for Eyelash Primer, 2-in-1, Shampoo, Conditioner (+ Biotin Gummies) so we can send them to Frey.",
+      "owner": "we",
+      "status": "needs-review",
+      "link": "",
+      "mine": false,
+      "urgent": true,
+      "type": "packaging"
+    }
+  ],
+  "inbox": [],
+  "ideas": []
+};
+const ORDER = ["not-started","designing","producing-samples","needs-review","approved","in-production","stuck","paused"];
+const LABELS = {"not-started":"Not started","designing":"Designing","producing-samples":"Producing samples","needs-review":"Needs review (Hamid)","approved":"Approved","in-production":"In production","stuck":"Stuck","paused":"Paused"};
+const STAGE = {"not-started":0,"designing":1,"producing-samples":2,"needs-review":3,"approved":4,"in-production":5};
+const SORT_PRI = {"stuck":0,"paused":1,"needs-review":2,"designing":3,"producing-samples":4,"not-started":5,"approved":6,"in-production":7};
+const WORK_PRI = {"designing":0,"producing-samples":1,"needs-review":2,"stuck":3,"not-started":4,"approved":5,"in-production":6,"paused":7};
+const TYPES = ["packaging","website","ops"];
+const TYPE_LABEL = {packaging:"Packaging",website:"Website",ops:"Ops"};
+const LANES = ["we","hamid","factory","ideas"];
+const OWNER_LANE = {we:"lane-we",hamid:"lane-hamid",factory:"lane-factory",ideas:"lane-ideas"};
+const CKEY="forchics_collapsed_v1", FKEY="forchics_filters_v1";
+let DB, drag=null, collapsed=new Set(), filters={}, sortMode="manual", tab="packaging";
+let dirHandle=null, boardHandle=null, lastMod=0, saveTimer=null, saving=false, suppressUntil=0, pollId=null;
+
+/* ---------- Supabase persistence (instant + live + multi-user) ---------- */
+const sb = supabase.createClient(window.CB_CONFIG.url, window.CB_CONFIG.anon);
+const BOARD_ID = 1;
+let CURRENT_USER = null;
+function setStatus(t,kind){ const el=document.getElementById('saveind'); if(el){ el.textContent="● "+t; el.className='saveind '+(kind||''); } }
+async function apiLoad(){
+  const { data, error } = await sb.from('board').select('data').eq('id',BOARD_ID).single();
+  if(error) throw error;
+  return data.data;
+}
+function save(){ if(saveTimer)clearTimeout(saveTimer); setStatus('saving…','saving'); saveTimer=setTimeout(doSave,100); }   // every change → instant POST
+async function doSave(){ saving=true;
+  try{
+    const { error } = await sb.from('board').upsert({ id:BOARD_ID, data:DB, updated_at:new Date().toISOString(), updated_by:(CURRENT_USER&&CURRENT_USER.email)||null });
+    if(error) throw error;
+    suppressUntil=Date.now()+1500; setStatus('saved · live','ok');
+  }catch(e){ setStatus('save failed — '+(e.message||e),'err'); }
+  saving=false;
+}
+function connectSSE(){   // live updates: Supabase pushes when anyone (you, a teammate, or Claude) changes the board
+  sb.channel('board-rt')
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'board',filter:'id=eq.'+BOARD_ID}, async ()=>{
+      if(saving||Date.now()<suppressUntil) return;
+      if(document.querySelector('.popmenu,.overlay,.subinput')) return;   // don't yank the UI mid-edit
+      try{ DB=await apiLoad(); ensure(); render(); setStatus('updated · live','ok'); }catch(e){}
+    })
+    .subscribe();
+}
+async function loadSpec(id,el){ el.textContent='Spec view isn’t wired into the local build yet — ask me in chat to check products/'+id+'.md.'; }
+function tell(t){ try{navigator.clipboard.writeText(t);}catch(e){} modalMsg('Copied — paste this into your Claude chat:\n\n'+t); }
+function logChange(){}
+function loadPrefs(){ try{ const c=localStorage.getItem(CKEY); collapsed=new Set(c?JSON.parse(c):["web:pdp"]); }catch(e){ collapsed=new Set(["web:pdp"]); } try{ filters=JSON.parse(localStorage.getItem(FKEY))||{}; }catch(e){ filters={}; } }
+function saveCollapsed(){ try{ localStorage.setItem(CKEY, JSON.stringify([...collapsed])); }catch(e){} }
+function saveFilters(){ try{ localStorage.setItem(FKEY, JSON.stringify(filters)); }catch(e){} }
+async function signIn(email){
+  const btn=document.getElementById('gbtn'), msg=document.getElementById('gmsg');
+  if(!email || !/.+@.+\..+/.test(email)){ if(msg){msg.textContent='Enter a valid email.'; msg.style.color='#c0392b';} return; }
+  if(btn){ btn.disabled=true; btn.textContent='Sending…'; }
+  const { error } = await sb.auth.signInWithOtp({ email, options:{ emailRedirectTo: window.location.origin+window.location.pathname } });
+  if(msg){ msg.style.color = error ? '#c0392b' : '#2e7d32'; msg.textContent = error ? ('Error: '+error.message) : ('Check '+email+' for your login link.'); }
+  if(btn){ btn.disabled=false; btn.textContent='Send me a login link'; }
+}
+async function signOut(){ await sb.auth.signOut(); location.reload(); }
+function showLogin(){
+  if(document.getElementById('login-gate')) return;
+  const d=document.createElement('div'); d.id='login-gate';
+  d.style.cssText='position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:#faf7f4;font-family:inherit';
+  d.innerHTML='<div style="text-align:center;width:300px"><div style="font-size:24px;font-weight:800;letter-spacing:-.5px;margin-bottom:6px">Chicksboard</div><div style="color:#999;margin-bottom:18px">Sign in with your email</div><input id="gemail" type="email" placeholder="you@forchics.com" style="width:100%;padding:11px 14px;border:1px solid #e2ddd7;border-radius:10px;font-size:15px;font-family:inherit;box-sizing:border-box;margin-bottom:10px"><button id="gbtn" style="width:100%;padding:11px 22px;border:none;border-radius:10px;background:#1a1a1a;color:#fff;font-size:15px;cursor:pointer;font-family:inherit;font-weight:600">Send me a login link</button><div id="gmsg" style="margin-top:12px;font-size:13px;min-height:16px"></div></div>';
+  document.body.appendChild(d);
+  const go=()=>signIn(document.getElementById('gemail').value.trim());
+  document.getElementById('gbtn').onclick=go;
+  document.getElementById('gemail').addEventListener('keydown',e=>{ if(e.key==='Enter') go(); });
+  setTimeout(()=>document.getElementById('gemail').focus(),50);
+}
+async function boot(){
+  injectStyles(); loadPrefs();
+  const { data:{ session } } = await sb.auth.getSession();
+  if(!session){ showLogin(); return; }
+  CURRENT_USER = session.user;
+  const g=document.getElementById('login-gate'); if(g) g.remove();
+  try{ DB=await apiLoad(); }
+  catch(e){ DB=structuredClone(SEED); try{ await sb.from('board').upsert({ id:BOARD_ID, data:DB, updated_at:new Date().toISOString() }); }catch(_){} }
+  ensure(); render(); setStatus('saved · live','ok'); connectSSE();
+}
+sb.auth.onAuthStateChange((ev)=>{ if(ev==='SIGNED_IN' && !CURRENT_USER) boot(); });
+
+/* ---------- helpers ---------- */
+function rollup(items){ const v=(items||[]).map(i=>i.status); if(!v.length)return "not-started"; if(v.includes("stuck"))return "stuck"; if(v.includes("paused"))return "paused"; let best="not-started",bs=99; v.forEach(s=>{ const st=STAGE[s]; if(st!=null&&st<bs){bs=st;best=s;} }); return best; }
+function slugify(s){ return s.toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,48)||('item-'+Date.now().toString(36)); }
+function uniqueId(base,exists){ let id=base,n=2; while(exists(id)){ id=base+'-'+n; n++; } return id; }
+function esc(s){ return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function ensure(){ DB.inbox=DB.inbox||[]; DB.ideas=DB.ideas||[]; DB.products.forEach(p=>{p.items=p.items||[];}); DB.web.forEach(w=>{w.items=w.items||[];}); DB.tasks.forEach(t=>{ if(!t.type)t.type='ops'; if(t.urgent===undefined)t.urgent=false; }); }
+function statusOf(o){ return o.override || rollup(o.items); }
+function chip(ro){ return `<span class="chip s-${ro}">${LABELS[ro]}</span>`; }
+function isCollapsed(k){ return collapsed.has(k); }
+function toggleCollapse(k){ collapsed.has(k)?collapsed.delete(k):collapsed.add(k); saveCollapsed(); render(); }
+function collapseAll(){ collapsed=new Set(["pkg:BIYING","pkg:ADICO","web:pdp","web:pages"]); saveCollapsed(); render(); }
+function expandAll(){ collapsed=new Set(); saveCollapsed(); render(); }
+function toggleFilter(k){ filters[k]=!filters[k]; saveFilters(); render(); }
+function visible(ro){ return !filters[ro]; }
+
+/* ---------- sub-items ---------- */
+function itemsOf(kind,id){ const o=(kind==='prod'?DB.products:DB.web).find(x=>x.id===id); return o?o.items:null; }
+function nameOf(kind,id){ const o=(kind==='prod'?DB.products:DB.web).find(x=>x.id===id); return o?o.name:id; }
+function setSub(kind,id,idx,status){ closeMenus(); const arr=itemsOf(kind,id); const it=arr[idx]; if(!it||it.status===status)return; it.status=status; save(); render(); }
+function renameSub(kind,id,idx){ closeMenus(); const arr=itemsOf(kind,id); askText("Rename part", arr[idx].label, v=>{ arr[idx].label=v; save(); render(); }); }
+function removeSub(kind,id,idx){ closeMenus(); itemsOf(kind,id).splice(idx,1); save(); render(); }
+function addSubInline(ev,kind,id){ ev.stopPropagation(); const btn=ev.currentTarget; const inp=document.createElement('input'); inp.className='subinput'; inp.placeholder='New part…'; btn.replaceWith(inp); inp.focus(); let done=false;
+  const commit=add=>{ if(done)return; done=true; const v=inp.value.trim(); if(add&&v){ itemsOf(kind,id).push({label:v,status:'not-started'}); save(); } render(); };
+  inp.onkeydown=e=>{ if(e.key==='Enter')commit(true); if(e.key==='Escape')commit(false); }; inp.onblur=()=>commit(true);
+}
+function openStatusMenu(ev,kind,id,idx){ ev.stopPropagation(); closeMenus(); const cur=itemsOf(kind,id)[idx].status; const m=document.createElement('div'); m.className='popmenu';
+  m.innerHTML=ORDER.map(o=>`<div class="popitem ${o===cur?'sel':''}" onclick="setSub('${kind}','${id}',${idx},'${o}')"><span class="pdot s-${o}"></span>${LABELS[o]}</div>`).join('')+`<div class="popdiv"></div><div class="popitem act" onclick="renameSub('${kind}','${id}',${idx})">✎ Rename part</div><div class="popitem act danger" onclick="removeSub('${kind}','${id}',${idx})">🗑 Delete part</div>`;
+  document.body.appendChild(m); const r=ev.currentTarget.getBoundingClientRect(); m.style.left=Math.min(r.left,window.innerWidth-210)+'px'; m.style.top=Math.min(r.bottom+4,window.innerHeight-300)+'px';
+  setTimeout(()=>document.addEventListener('click',closeMenus,{once:true}),0); }
+function closeMenus(){ document.querySelectorAll('.popmenu').forEach(e=>e.remove()); }
+function subPill(kind,id,idx,it){ return `<button class="subpill s-${it.status}" title="${esc(it.label)}: ${LABELS[it.status]}" onclick="openStatusMenu(event,'${kind}','${id}',${idx})">${esc(it.label)}<span class="pcaret">▾</span></button>`; }
+function pillsHtml(kind,id,items){ return `<div class="pills">`+items.map((it,idx)=>subPill(kind,id,idx,it)).join('')+`<button class="subadd" title="Add part" onclick="addSubInline(event,'${kind}','${id}')">＋</button></div>`; }
+
+/* ---------- overall status ---------- */
+function openOverallMenu(ev,kind,id){ ev.stopPropagation(); closeMenus(); const o=(kind==='prod'?DB.products:DB.web).find(x=>x.id===id); const cur=statusOf(o); const m=document.createElement('div'); m.className='popmenu';
+  m.innerHTML=`<div class="popcap">Overall status</div>`+ORDER.map(s=>`<div class="popitem ${s===cur&&o.override?'sel':''}" onclick="setOverall('${kind}','${id}','${s}')"><span class="pdot s-${s}"></span>${LABELS[s]}</div>`).join('')+`<div class="popdiv"></div><div class="popitem act" onclick="clearOverall('${kind}','${id}')">⟲ Auto (from parts)</div>`;
+  document.body.appendChild(m); const r=ev.currentTarget.getBoundingClientRect(); m.style.left=Math.min(r.left,window.innerWidth-210)+'px'; m.style.top=Math.min(r.bottom+4,window.innerHeight-300)+'px';
+  setTimeout(()=>document.addEventListener('click',closeMenus,{once:true}),0); }
+function setOverall(kind,id,s){ closeMenus(); const o=(kind==='prod'?DB.products:DB.web).find(x=>x.id===id); o.override=s; save(); render(); }
+function clearOverall(kind,id){ closeMenus(); const o=(kind==='prod'?DB.products:DB.web).find(x=>x.id===id); delete o.override; save(); render(); }
+function overallChip(kind,id,o){ const ro=statusOf(o); return `<button class="chip s-${ro} chipbtn ${o.override?'manual':''}" title="Overall status${o.override?' (manual override)':' (auto from parts)'} — click to change" onclick="openOverallMenu(event,'${kind}','${id}')">${LABELS[ro]}${o.override?' ✱':''}</button>`; }
+
+/* ---------- products / web ---------- */
+function setProdNotes(id,val){ const p=DB.products.find(x=>x.id===id); if((p.notes||'')===val)return; p.notes=val; save(); render(); }
+function setProdLinks(id,val){ const p=DB.products.find(x=>x.id===id); p.links=val; save(); }
+function editProdNotes(id){ const p=DB.products.find(x=>x.id===id); askTextarea(`Note — ${p.name}`, p.notes||"", v=>setProdNotes(id,v)); }
+function addProduct(lineId,ev){ if(ev)ev.stopPropagation(); askText("New product name","",name=>{ const id=uniqueId(slugify(name),x=>DB.products.some(p=>p.id===x)); DB.products.push({id,name,line:lineId,active:true,items:[{label:"Bottle",status:"not-started"},{label:"Box",status:"not-started"},{label:"Manual",status:"not-started"},{label:"Legal",status:"not-started"}],notes:""}); save(); render(); }); }
+function moveProduct(id,lineId){ const p=DB.products.find(x=>x.id===id); if(!p||p.line===lineId)return; p.line=lineId; save(); render(); }
+function delProduct(id){ const p=DB.products.find(x=>x.id===id); confirmBox(`Delete "${p.name}"?`,()=>{ DB.products=DB.products.filter(x=>x.id!==id); save(); render(); }); }
+function setWebNotes(id,val){ const w=DB.web.find(x=>x.id===id); if((w.notes||'')===val)return; w.notes=val; save(); render(); }
+function editWebNotes(id){ const w=DB.web.find(x=>x.id===id); askTextarea(`Note — ${w.name}`, w.notes||"", v=>setWebNotes(id,v)); }
+function addWeb(group,ev){ if(ev)ev.stopPropagation(); askText(group==='pdp'?"New PDP name":"New page name","",name=>{ const id=uniqueId(slugify((group==='pdp'?'pdp-':'')+name),x=>DB.web.some(w=>w.id===x)); const items=group==='pdp'?["Assets","Layout","Carousel","Offer","Copy"]:["Assets","Layout","Copy"]; DB.web.push({id,name,group,items:items.map(l=>({label:l,status:"not-started"})),notes:""}); save(); render(); }); }
+function delWeb(id){ const w=DB.web.find(x=>x.id===id); confirmBox(`Delete "${w.name}"?`,()=>{ DB.web=DB.web.filter(x=>x.id!==id); save(); render(); }); }
+
+/* ---------- tasks ---------- */
+function setTaskStatus(id,val){ const t=DB.tasks.find(x=>x.id===id); if(t.status===val)return; t.status=val; save(); render(); }
+function toggleMine(id){ const t=DB.tasks.find(x=>x.id===id); t.mine=!t.mine; save(); render(); }
+function toggleUrgent(id){ const t=DB.tasks.find(x=>x.id===id); t.urgent=!t.urgent; save(); render(); }
+function cycleType(id){ const t=DB.tasks.find(x=>x.id===id); const i=TYPES.indexOf(t.type||'ops'); t.type=TYPES[(i+1)%TYPES.length]; save(); render(); }
+function addTask(owner){ askText("New "+(owner==='ideas'?'idea':'task'),"",title=>{ DB.tasks.push({id:"t_"+Date.now().toString(36),title,owner,status:"not-started",link:"",mine:owner==='ideas',urgent:false,type:'ops'}); save(); render(); }); }
+function delTask(id){ const t=DB.tasks.find(x=>x.id===id); confirmBox(`Delete "${t.title}"?`,()=>{ DB.tasks=DB.tasks.filter(x=>x.id!==id); save(); render(); }); }
+function moveTask(draggedId,beforeId,owner){ const i=DB.tasks.findIndex(t=>t.id===draggedId); if(i<0)return; const [t]=DB.tasks.splice(i,1); t.owner=owner; if(beforeId){ const j=DB.tasks.findIndex(x=>x.id===beforeId); DB.tasks.splice(j<0?DB.tasks.length:j,0,t);} else DB.tasks.push(t); save(); render(); }
+function setSort(m){ sortMode=m; renderDaily(); }
+function sortItems(items){ const a=items.slice();
+  if(sortMode==='az') a.sort((x,y)=>x.title.localeCompare(y.title));
+  else if(sortMode==='status') a.sort((x,y)=>(SORT_PRI[x.status]??9)-(SORT_PRI[y.status]??9));
+  else if(sortMode==='working') a.sort((x,y)=> ((y.urgent?1:0)-(x.urgent?1:0)) || ((WORK_PRI[x.status]??9)-(WORK_PRI[y.status]??9)) );
+  else if(sortMode==='mine') a.sort((x,y)=>(y.mine?1:0)-(x.mine?1:0));
+  else if(sortMode==='urgent') a.sort((x,y)=>(y.urgent?1:0)-(x.urgent?1:0));
+  else if(sortMode==='type') a.sort((x,y)=>TYPES.indexOf(x.type||'ops')-TYPES.indexOf(y.type||'ops'));
+  return a; }
+
+/* ---------- task title + subtasks ---------- */
+function inlineEdit(el,value,multiline,onSave){
+  const ta=document.createElement('textarea'); ta.className='inlineedit'; ta.value=value; const h=Math.max(el.offsetHeight,22);
+  el.replaceWith(ta); ta.style.height=h+'px'; ta.focus(); ta.select();
+  const grow=()=>{ ta.style.height='auto'; ta.style.height=ta.scrollHeight+'px'; }; grow();
+  let done=false;
+  const commit=ok=>{ if(done)return; done=true; const v=ta.value.replace(/\s+$/,''); if(ok && v!==value) onSave(v); render(); };
+  ta.oninput=grow; ta.onkeydown=e=>{ if(e.key==='Escape'){e.preventDefault();commit(false);} if(e.key==='Enter'&&!multiline){e.preventDefault();commit(true);} }; ta.onblur=()=>commit(true);
+}
+function editTaskTitleInline(ev,id){ ev.stopPropagation(); const t=DB.tasks.find(x=>x.id===id); inlineEdit(ev.currentTarget, t.title, false, v=>{ if(v){ t.title=v; save(); } }); }
+function editTaskDesc(ev,id){ ev.stopPropagation(); const t=DB.tasks.find(x=>x.id===id); inlineEdit(ev.currentTarget, t.description||'', true, v=>{ t.description=v; save(); }); }
+function addDescInline(ev,id){ ev.stopPropagation(); const t=DB.tasks.find(x=>x.id===id); inlineEdit(ev.currentTarget, '', true, v=>{ if(v){ t.description=v; collapsed.add('descopen:'+id); saveCollapsed(); save(); } }); }
+function toggleDescFold(id){ const k='descopen:'+id; collapsed.has(k)?collapsed.delete(k):collapsed.add(k); saveCollapsed(); render(); }
+function toggleCardFold(id){ const k='cardfold:'+id; collapsed.has(k)?collapsed.delete(k):collapsed.add(k); saveCollapsed(); render(); }
+function foldAllTasks(){ DB.tasks.forEach(t=>collapsed.add('cardfold:'+t.id)); saveCollapsed(); render(); }
+function unfoldAllTasks(){ DB.tasks.forEach(t=>collapsed.delete('cardfold:'+t.id)); saveCollapsed(); render(); }
+function taskSubs(id){ const t=DB.tasks.find(x=>x.id===id); t.subtasks=t.subtasks||[]; return t.subtasks; }
+function addSubtaskInline(ev,id){ ev.stopPropagation(); const btn=ev.currentTarget; const inp=document.createElement('input'); inp.className='subinput'; inp.placeholder='New subtask…'; btn.replaceWith(inp); inp.focus(); let done=false;
+  const commit=ok=>{ if(done)return; done=true; const v=inp.value.trim(); if(ok&&v){ taskSubs(id).push({text:v,done:false}); collapsed.delete('task:'+id); saveCollapsed(); save(); } render(); };
+  inp.onkeydown=e=>{ if(e.key==='Enter')commit(true); if(e.key==='Escape')commit(false); }; inp.onblur=()=>commit(true); }
+function toggleSubtask(id,idx){ const s=taskSubs(id)[idx]; s.done=!s.done; save(); render(); }
+function renameSubtask(id,idx){ const s=taskSubs(id); askText('Edit subtask', s[idx].text, v=>{ s[idx].text=v; save(); render(); }); }
+function delSubtask(id,idx){ taskSubs(id).splice(idx,1); save(); render(); }
+function toggleTaskFold(id){ const k='task:'+id; collapsed.has(k)?collapsed.delete(k):collapsed.add(k); saveCollapsed(); render(); }
+
+/* ---------- drag ---------- */
+function dragStart(kind,id,ev){ drag={kind,id}; try{ev.dataTransfer.setData('text/plain',id); ev.dataTransfer.effectAllowed='move';}catch(e){} }
+function dragEnd(){ drag=null; document.querySelectorAll('.dragover,.insert').forEach(e=>e.classList.remove('dragover','insert')); }
+
+/* ---------- detail ---------- */
+function qa(id,name){ tell(`QA the latest packaging/design for "${name}" against its spec in FORCHICS Brain (products/${id}.md). Cross-check USPs, dimensions, net weight, on-pack ingredients, how-to-use (short), warnings, legal copy, and required badges. Report any mismatch.`); }
+function openDetail(id){ const p=DB.products.find(x=>x.id===id); if(!p)return; const ro=statusOf(p); const ov=document.createElement('div'); ov.className='overlay';
+  ov.innerHTML=`<div class="modal big"><div class="cardtop"><div><div class="mlab" style="margin:0">${esc(p.name)}</div><div class="muted" style="font-size:11px;margin-top:3px">${DB.lines[p.line]?.label||p.line} · ${DB.lines[p.line]?.factory||''} &nbsp;${chip(ro)}</div></div><button class="delbtn" id="dClose">✕</button></div>
+    <div class="dsec"><div class="dh">Parts &amp; status</div>${pillsHtml('prod',p.id,p.items)}</div>
+    <div class="dsec"><div class="dh">Note</div><textarea id="dNote">${esc(p.notes||"")}</textarea></div>
+    <div class="dsec"><div class="dh">Links</div><input id="dLinks" value="${esc(p.links||"")}"></div>
+    <div class="dsec"><div class="dh">Spec from the Brain <span class="muted" style="font-weight:400;text-transform:none;letter-spacing:0">— products/${p.id}.md</span></div><div id="dSpec" class="specbox">Loading spec…</div></div>
+    <div class="dsec"><div class="dh">Design check</div><div class="muted" style="font-size:11.5px;margin-bottom:8px">Copies a prompt to check the factory file vs the Brain spec — paste into your Claude chat.</div><button class="btn" onclick="qa('${p.id}','${esc(p.name).replace(/'/g,"")}')">Copy design-check prompt</button></div>
+    <div class="mrow"><button class="btn primary" id="dDone">Done</button></div></div>`;
+  document.body.appendChild(ov); const close=()=>ov.remove(); ov.querySelector('#dClose').onclick=close; ov.querySelector('#dDone').onclick=close;
+  ov.querySelector('#dNote').onchange=e=>setProdNotes(id,e.target.value); ov.querySelector('#dLinks').onchange=e=>setProdLinks(id,e.target.value);
+  loadSpec(p.id, ov.querySelector('#dSpec')); }
+
+/* ---------- cards ---------- */
+function sticky(kind,id,notes){ return `<div class="sticky ${notes?'':'empty'}" onclick="${kind==='prod'?'editProdNotes':'editWebNotes'}('${id}')">${notes?esc(notes):'＋ note'}</div>`; }
+function prodCard(p){ const ro=statusOf(p);
+  return `<div class="card bg-${ro}" draggable="true" ondragstart="dragStart('product','${p.id}',event)" ondragend="dragEnd()">
+    <div class="chiprow">${overallChip('prod',p.id,p)}<div class="topbtns"><button class="iconbtn" title="Details" onclick="openDetail('${p.id}')">⤢</button><button class="delbtn" title="Delete" onclick="delProduct('${p.id}')">✕</button></div></div>
+    <div class="cardtop"><h3 class="clickable" onclick="openDetail('${p.id}')">${esc(p.name)}</h3></div>
+    ${pillsHtml('prod',p.id,p.items)}${sticky('prod',p.id,p.notes)}</div>`; }
+function webCard(w){ const ro=statusOf(w);
+  return `<div class="card bg-${ro}"><div class="chiprow">${overallChip('web',w.id,w)}<div class="topbtns"><button class="delbtn" onclick="delWeb('${w.id}')">✕</button></div></div>
+    <div class="cardtop"><h3>${esc(w.name)}</h3></div>${pillsHtml('web',w.id,w.items)}${sticky('web',w.id,w.notes)}</div>`; }
+function taskCard(t){ const link=t.link?`<span class="linktag">${esc(t.link)}</span>`:""; const type=t.type||'ops';
+  const subs=t.subtasks||[]; const dn=subs.filter(s=>s.done).length; const folded=isCollapsed('task:'+t.id);
+  let chk='';
+  if(subs.length){ chk+=`<div class="checkhdr" onclick="toggleTaskFold('${t.id}')"><span class="caret">${folded?'▸':'▾'}</span>Checklist <span class="muted">${dn}/${subs.length}</span></div>`;
+    if(!folded){ chk+='<div class="checklist">'+subs.map((s,i)=>`<div class="chkitem ${s.done?'done':''}"><input type="checkbox" ${s.done?'checked':''} onclick="event.stopPropagation()" onchange="toggleSubtask('${t.id}',${i})"><span class="chktext" onclick="renameSubtask('${t.id}',${i})">${esc(s.text)}</span><button class="delbtn" onclick="delSubtask('${t.id}',${i})">✕</button></div>`).join('')+`<button class="subadd2" onclick="addSubtaskInline(event,'${t.id}')">＋ subtask</button></div>`; } }
+  else { chk=`<button class="subadd2" onclick="addSubtaskInline(event,'${t.id}')">＋ subtask</button>`; }
+  const dOpen=collapsed.has('descopen:'+t.id); let desc='';
+  if(t.description){ desc=`<div class="deschdr" onclick="toggleDescFold('${t.id}')"><span class="caret">${dOpen?'▾':'▸'}</span>Description</div>`+(dOpen?`<div class="desc" title="Click to edit" onclick="editTaskDesc(event,'${t.id}')">${esc(t.description)}</div>`:''); }
+  else { desc=`<button class="subadd2" onclick="addDescInline(event,'${t.id}')">＋ description</button>`; }
+  const cardFolded=isCollapsed('cardfold:'+t.id);
+  const dragattrs=`draggable="true" ondragstart="dragStart('task','${t.id}',event)" ondragend="dragEnd()" ondragover="event.preventDefault();event.stopPropagation();this.classList.add('insert')" ondragleave="this.classList.remove('insert')" ondrop="event.preventDefault();event.stopPropagation();this.classList.remove('insert');if(drag&&drag.kind==='task')moveTask(drag.id,'${t.id}','OWNER')"`;
+  const head=`<div class="cardtop"><button class="cardcaret" title="Fold / unfold this card" onclick="event.stopPropagation();toggleCardFold('${t.id}')">${cardFolded?'▸':'▾'}</button><div class="ttitle" title="Click to edit" onclick="editTaskTitleInline(event,'${t.id}')">${esc(t.title)}</div><button class="delbtn" onclick="delTask('${t.id}')">✕</button></div>`;
+  if(cardFolded){ const fsel=`<select class="sel s-${t.status}" style="width:auto;max-width:170px" onchange="setTaskStatus('${t.id}',this.value)" onclick="event.stopPropagation()">${ORDER.map(o=>`<option value="${o}" ${o===t.status?'selected':''}>${LABELS[o]}</option>`).join('')}</select>`;
+    return `<div class="tcard bg-${t.status} ${t.urgent?'urgentcard':''} folded" ${dragattrs}>${head}<div class="foldmeta">${fsel}${subs.length?`<span class="muted">✓ ${dn}/${subs.length}</span>`:''}${t.urgent?'<span class="muted">🔥</span>':''}</div></div>`; }
+  return `<div class="tcard bg-${t.status} ${t.urgent?'urgentcard':''}" ${dragattrs}>
+    ${head}
+    <div class="tagrow"><button class="startag ${t.mine?'on':''}" title="Mine" onclick="toggleMine('${t.id}')">★</button><button class="urg ${t.urgent?'on':''}" title="Urgent" onclick="toggleUrgent('${t.id}')">🔥</button><button class="ttag type-${type}" title="Type" onclick="cycleType('${t.id}')">${TYPE_LABEL[type]}</button></div>
+    <div class="row"><select class="sel s-${t.status}" onchange="setTaskStatus('${t.id}',this.value)" onclick="event.stopPropagation()">${ORDER.map(o=>`<option value="${o}" ${o===t.status?'selected':''}>${LABELS[o]}</option>`).join('')}</select></div>
+    ${link?`<div class="row" style="margin-top:6px">${link}<span></span></div>`:""}
+    <div class="descblock">${desc}</div>
+    <div class="checkblock">${chk}</div></div>`; }
+
+/* ---------- next ---------- */
+function rippleHints(){ const out=[]; DB.products.forEach(p=>{ if(p.items.length && p.items.every(i=>i.status==="approved")) out.push(`“${p.name}” is fully approved — move parts to In production?`); }); return out; }
+function nextContent(){ const urgent=[],stuck=[],paused=[],review=[],factory=[],hamid=[];
+  DB.tasks.forEach(t=>{ if(t.urgent&&t.status!=="approved"&&t.status!=="in-production")urgent.push(t.title); });
+  const scan=(name,items,suf)=>items.forEach(i=>{ if(i.status==="stuck")stuck.push(`${name}${suf} — ${i.label}`); if(i.status==="paused")paused.push(`${name}${suf} — ${i.label}`); if(i.status==="needs-review")review.push(`${name}${suf} — ${i.label}`); });
+  DB.products.forEach(p=>scan(p.name,p.items,"")); DB.web.forEach(w=>scan(w.name,w.items," (web)"));
+  DB.tasks.forEach(t=>{ if(t.owner==="factory"&&t.status!=="approved"&&t.status!=="in-production")factory.push(t.title); if(t.owner==="hamid"&&t.status!=="approved"&&t.status!=="in-production")hamid.push(t.title); if(t.status==="stuck")stuck.push("Task: "+t.title); if(t.status==="paused")paused.push("Task: "+t.title); });
+  const grp=(title,arr,empty)=>`<div class="next-grp"><h3>${title} <span class="muted">(${arr.length})</span></h3>`+(arr.length?[...new Set(arr)].map(x=>`<div class="next-item">${esc(x)}</div>`).join(""):`<div class="next-item muted">${empty}</div>`)+`</div>`;
+  const hints=rippleHints(); const hintHtml=hints.length?`<div class="next-grp"><h3>🔗 Ripple checks <span class="muted">(${hints.length})</span></h3>`+hints.map(h=>`<div class="next-item" style="border-color:#c7b3f0">${esc(h)}</div>`).join("")+`</div>`:"";
+  return grp("🔥 Urgent",urgent,"Nothing marked urgent.")+grp("🟠 Stuck — blocked, need something to proceed",stuck,"Nothing stuck.")+hintHtml+grp("⏸️ Paused",paused,"Nothing paused.")+grp("🏭 Confirm with factories",factory,"Nothing waiting on factories.")+grp("👤 Waiting on Hamid",hamid,"Nothing waiting on Hamid.")+grp("🟣 Needs review",review,"Nothing in review."); }
+
+/* ---------- render ---------- */
+function collHeader(key,label,right){ const c=isCollapsed(key); return `<div class="sechdr" onclick="toggleCollapse('${key}')"><span class="caret">${c?'▸':'▾'}</span><span class="seclabel">${label}</span>${right||''}</div>`; }
+function renderFilterbar(){ const chipBtn=(k,label)=>`<button class="fchip ${filters[k]?'on':''}" onclick="toggleFilter('${k}')">${filters[k]?'☑':'☐'} Hide ${label}</button>`;
+  const html=`<span class="fblab">Focus:</span>${chipBtn('approved','Approved')}${chipBtn('in-production','In production')}${chipBtn('paused','Paused')}<span style="flex:1"></span><button class="fchip" onclick="collapseAll()">Collapse all</button><button class="fchip" onclick="expandAll()">Expand all</button>`;
+  ['fb-pkg','fb-web'].forEach(id=>{ const fb=document.getElementById(id); if(fb) fb.innerHTML=html; }); }
+function renderPackaging(){ const byF={}; Object.entries(DB.lines).forEach(([lid,l])=>{ (byF[l.factory]=byF[l.factory]||[]).push(lid); }); let h="";
+  for(const fac of Object.keys(byF)){ h+=collHeader('pkg:'+fac,fac,''); if(!isCollapsed('pkg:'+fac)){ h+='<div class="secbody">';
+    for(const lid of byF[fac]){ const all=DB.products.filter(p=>p.line===lid); const prods=all.filter(p=>visible(statusOf(p)));
+      h+=`<div class="linehdr2">${DB.lines[lid].label} <span class="muted">(${prods.length}/${all.length})</span><button class="addbtn" onclick="addProduct('${lid}',event)">＋ product</button></div>`;
+      h+=`<div class="grid linewrap" data-line="${lid}" ondragover="if(drag&&drag.kind==='product'){event.preventDefault();this.classList.add('dragover')}" ondragleave="this.classList.remove('dragover')" ondrop="this.classList.remove('dragover');if(drag&&drag.kind==='product')moveProduct(drag.id,'${lid}')">${prods.map(prodCard).join("")||'<div class="muted" style="font-size:12px">None shown.</div>'}</div>`; } h+='</div>'; } }
+  document.getElementById('pkgbody').innerHTML=h; }
+function lineOfPdp(w){ const pid=(w.id&&w.id.indexOf('pdp-')===0)?w.id.slice(4):null; const p=pid&&DB.products.find(x=>x.id===pid); return p?p.line:null; }
+function renderWeb(){ const PDP_GROUPS=[["Hair Line",["hair"]],["Eyelash/Eyebrow",["eyebrow-eyelash"]],["Supplement Line",["supplements"]],["Perfumes + Fragrances",["perfume","arousal"]]];
+  const pa=DB.web.filter(w=>w.group==='pdp'), ga=DB.web.filter(w=>w.group!=='pdp');
+  let h=collHeader('web:pdp',`PDPs — by line <span class="muted">(${pa.filter(w=>visible(statusOf(w))).length}/${pa.length})</span>`,`<button class="addbtn" onclick="addWeb('pdp',event)">＋ PDP</button>`);
+  if(!isCollapsed('web:pdp')){
+    h+='<div class="secbody">'; const used=new Set();
+    for(const [label,lines] of PDP_GROUPS){
+      const all=pa.filter(w=>lines.includes(lineOfPdp(w))); all.forEach(w=>used.add(w.id));
+      const shown=all.filter(w=>visible(statusOf(w))); const key='web:pdp:'+label.replace(/[^a-z]/gi,'').toLowerCase();
+      h+=collHeader(key,`${label} <span class="muted">(${shown.length}/${all.length})</span>`,'');
+      if(!isCollapsed(key)) h+=`<div class="grid">${shown.map(webCard).join("")||'<div class="muted" style="font-size:12px">None shown.</div>'}</div>`;
+    }
+    const other=pa.filter(w=>!used.has(w.id));
+    if(other.length){ const shown=other.filter(w=>visible(statusOf(w))); h+=collHeader('web:pdp:other',`Other <span class="muted">(${shown.length}/${other.length})</span>`,''); if(!isCollapsed('web:pdp:other')) h+=`<div class="grid">${shown.map(webCard).join("")}</div>`; }
+    h+='</div>';
+  }
+  h+=collHeader('web:pages',`Pages <span class="muted">(${ga.filter(w=>visible(statusOf(w))).length}/${ga.length})</span>`,`<button class="addbtn" onclick="addWeb('page',event)">＋ page</button>`);
+  if(!isCollapsed('web:pages')) h+=`<div class="grid">${ga.filter(w=>visible(statusOf(w))).map(webCard).join("")||'<div class="muted" style="font-size:12px">None shown.</div>'}</div>`;
+  document.getElementById('webbody').innerHTML=h; }
+function renderDaily(){ LANES.forEach(o=>{ const items=sortItems(DB.tasks.filter(t=>t.owner===o)); const lane=document.getElementById(OWNER_LANE[o]); if(!lane)return;
+  lane.innerHTML=items.map(t=>taskCard(t).replace(/'OWNER'/g,`'${o}'`)).join("")||`<div class="muted" style="font-size:12px">Drop here or add.</div>`;
+  const c=document.getElementById("c-"+o); if(c) c.textContent=items.length;
+  lane.ondragover=e=>{ if(drag&&drag.kind==='task'){ e.preventDefault(); lane.classList.add('dragover'); } }; lane.ondragleave=()=>lane.classList.remove('dragover'); lane.ondrop=e=>{ lane.classList.remove('dragover'); if(drag&&drag.kind==='task') moveTask(drag.id,null,o); }; }); }
+function render(){ ensure(); renderFilterbar(); renderPackaging(); renderWeb(); renderDaily(); document.getElementById('next-content').innerHTML=nextContent(); }
+
+/* ---------- nav / tools ---------- */
+function setTab(t){ tab=t; document.querySelectorAll('.tab').forEach(e=>e.classList.toggle('active',e.dataset.tab===t)); document.querySelectorAll('.pane').forEach(p=>p.classList.add('hidden')); document.getElementById(t).classList.remove('hidden'); }
+function exportJSON(){ const t=JSON.stringify(DB,null,2); try{navigator.clipboard.writeText(t);}catch(e){} modalMsg("Board JSON copied to clipboard."); }
+function resetSeed(){ confirmBox("Reset board to seeded state? This overwrites board.json.",()=>{ DB=structuredClone(SEED); ensure(); save(); render(); }); }
+function planDay(){ tell("Look at the current FORCHICS Board and give me a prioritized plan for today: urgent first, then what unblocks the most, what's waiting on Hamid, what to confirm with the factories. Keep it tight."); }
+
+/* ---------- modals ---------- */
+function askText(label,def,cb){ const ov=document.createElement('div'); ov.className='overlay'; ov.innerHTML=`<div class="modal"><div class="mlab">${esc(label)}</div><input id="mInput" value="${esc(def)}" autocomplete="off"/><div class="mrow"><button class="btn" id="mCancel">Cancel</button><button class="btn primary" id="mOk">Save</button></div></div>`; document.body.appendChild(ov); const inp=ov.querySelector('#mInput'); inp.focus(); const close=()=>ov.remove(); ov.querySelector('#mCancel').onclick=close; ov.querySelector('#mOk').onclick=()=>{const v=inp.value.trim();close();if(v)cb(v);}; inp.onkeydown=e=>{if(e.key==='Enter')ov.querySelector('#mOk').click();if(e.key==='Escape')close();}; }
+function askTextarea(label,def,cb){ const ov=document.createElement('div'); ov.className='overlay'; ov.innerHTML=`<div class="modal"><div class="mlab">${esc(label)}</div><textarea id="mTa">${esc(def)}</textarea><div class="mrow"><button class="btn" id="mCancel">Cancel</button><button class="btn primary" id="mOk">Save</button></div></div>`; document.body.appendChild(ov); const ta=ov.querySelector('#mTa'); ta.focus(); ov.querySelector('#mCancel').onclick=()=>ov.remove(); ov.querySelector('#mOk').onclick=()=>{const v=ta.value;ov.remove();cb(v);}; }
+function confirmBox(label,cb){ const ov=document.createElement('div'); ov.className='overlay'; ov.innerHTML=`<div class="modal"><div class="mlab">${esc(label)}</div><div class="mrow"><button class="btn" id="mCancel">Cancel</button><button class="btn primary" id="mOk">Confirm</button></div></div>`; document.body.appendChild(ov); ov.querySelector('#mCancel').onclick=()=>ov.remove(); ov.querySelector('#mOk').onclick=()=>{ov.remove();cb();}; }
+function modalMsg(msg){ const ov=document.createElement('div'); ov.className='overlay'; ov.innerHTML=`<div class="modal"><div class="mlab" style="white-space:pre-wrap">${esc(msg)}</div><div class="mrow"><button class="btn primary" id="mOk">OK</button></div></div>`; document.body.appendChild(ov); ov.querySelector('#mOk').onclick=()=>ov.remove(); }
+
+/* ---------- styles ---------- */
+function injectStyles(){ const css=`
+  .stickytop{ position:sticky; top:0; z-index:50; background:#f6f7f9; padding:12px 0 8px; margin-top:-18px; box-shadow:0 8px 10px -9px rgba(20,30,50,.22); }
+  .saveind{ font-size:11.5px; font-weight:700; align-self:center; color:#9aa1ad; } .saveind.ok{ color:#15803d; } .saveind.saving{ color:#1d4ed8; } .saveind.err{ color:#dc2626; } .saveind.warn{ color:#b45309; }
+  .sel{ border:none; border-radius:7px; padding:5px 6px; font-size:11px; font-weight:700; cursor:pointer; width:100%; -webkit-appearance:none; appearance:none; }
+  .s-not-started{ background:#eef0f2; color:#6b7280; } .s-designing{ background:#dbeafe; color:#1d4ed8; } .s-producing-samples{ background:#cffafe; color:#0e7490; } .s-needs-review{ background:#ede9fe; color:#6d28d9; } .s-approved{ background:#dcfce7; color:#15803d; } .s-in-production{ background:#fee2e2; color:#b91c1c; } .s-stuck{ background:#ffedd5; color:#c2410c; } .s-paused{ background:#fef9c3; color:#854d0e; }
+  .bg-not-started{ background:#fcfcfd; } .bg-designing{ background:#eff5ff; } .bg-producing-samples{ background:#f0fdff; } .bg-needs-review{ background:#f6f2ff; } .bg-approved{ background:#eefbf1; } .bg-in-production{ background:#fef3f3; } .bg-stuck{ background:#fff7ed; } .bg-paused{ background:#fefce8; }
+  .chiprow{ display:flex; align-items:center; gap:6px; margin:0 0 8px; } .chip{ display:inline-block; font-size:10px; font-weight:700; padding:3px 9px; border-radius:20px; letter-spacing:.3px; } .chipbtn{ border:none; cursor:pointer; } .chipbtn:hover{ filter:brightness(.95); } .chipbtn.manual{ box-shadow:0 0 0 1.5px #94a3b8 inset; } .chiprow .topbtns{ margin-left:auto; }
+  .cardtop{ display:flex; align-items:flex-start; justify-content:space-between; gap:6px; } .cardtop p{ margin:0; } .topbtns{ display:flex; gap:2px; flex:none; }
+  .clickable{ cursor:pointer; } .clickable:hover{ text-decoration:underline; }
+  .iconbtn,.delbtn{ border:none; background:none; cursor:pointer; font-size:12px; line-height:1; padding:2px 4px; border-radius:5px; flex:none; color:#aab0bd; } .iconbtn:hover{ background:#eef2ff; color:#1d4ed8; } .delbtn:hover{ background:#fde8e8; color:#dc2626; }
+  .addbtn{ margin-left:auto; border:1px dashed #c7ccd6; background:#fff; color:#5b6472; border-radius:7px; padding:2px 9px; font-size:11px; font-weight:600; cursor:pointer; } .addbtn:hover{ background:#eef2ff; border-color:#9bb4f5; color:#1d4ed8; }
+  .pills{ display:flex; flex-wrap:wrap; gap:5px; } .subpill{ display:inline-flex; align-items:center; gap:4px; border:none; border-radius:8px; padding:5px 9px; font-size:11px; font-weight:700; cursor:pointer; } .subpill .pcaret{ font-size:8px; opacity:.55; } .subpill:hover{ filter:brightness(.96); }
+  .subadd{ border:1px dashed #c7ccd6; background:#fff; color:#8a92a3; border-radius:8px; padding:5px 9px; font-size:11px; font-weight:700; cursor:pointer; } .subadd:hover{ background:#eef2ff; border-color:#9bb4f5; color:#1d4ed8; }
+  .subinput{ border:1px solid #9bb4f5; border-radius:8px; padding:4px 8px; font:inherit; font-size:11px; width:130px; outline:none; }
+  .sechdr{ display:flex; align-items:center; gap:8px; cursor:pointer; padding:9px 10px; margin:8px 0 4px; background:#eef0f3; border-radius:9px; font-weight:700; font-size:13px; color:#39404e; user-select:none; } .sechdr:hover{ background:#e6e9ef; } .sechdr .caret{ font-size:11px; color:#8a92a3; width:12px; }
+  .secbody{ padding-left:6px; border-left:2px solid #eef0f3; margin-left:6px; } .linehdr2{ display:flex; align-items:center; gap:8px; font-size:11px; text-transform:uppercase; letter-spacing:1px; color:#aab0bd; font-weight:700; margin:12px 0 8px; }
+  .sticky{ margin-top:9px; background:#fff7c2; border:1px solid #f3e08a; border-radius:8px; padding:8px 10px; font-size:11.5px; color:#6b5e16; line-height:1.4; cursor:text; box-shadow:0 1px 2px rgba(120,100,0,.08); white-space:pre-wrap; } .sticky.empty{ background:#fffdf0; color:#bcae6a; font-style:italic; border-style:dashed; }
+  .tagrow{ display:flex; gap:5px; align-items:center; margin:7px 0; flex-wrap:wrap; } .startag{ border:1px solid #e6c200; background:#fff; color:#b08900; border-radius:7px; padding:3px 8px; font-size:11px; font-weight:700; cursor:pointer; } .startag.on{ background:#fff3c4; } .urg{ border:1px solid #f0b9b9; background:#fff; border-radius:7px; padding:3px 7px; font-size:11px; cursor:pointer; filter:grayscale(1); opacity:.6; } .urg.on{ background:#fee2e2; filter:none; opacity:1; border-color:#ef9a9a; } .urgentcard{ box-shadow:0 0 0 2px #ef4444 inset; }
+  .ttitle{ cursor:text; } .ttitle:hover{ text-decoration:underline dotted; }
+  .titleinput{ width:100%; border:1px solid #9bb4f5; border-radius:6px; padding:4px 6px; font:inherit; font-size:12.5px; box-sizing:border-box; }
+  .checkblock{ margin-top:8px; } .checkhdr{ display:flex; align-items:center; gap:6px; cursor:pointer; font-size:11px; font-weight:700; color:#5b6472; padding:3px 0; } .checkhdr .caret{ font-size:10px; color:#8a92a3; width:10px; }
+  .checklist{ display:flex; flex-direction:column; gap:3px; } .chkitem{ display:flex; align-items:center; gap:7px; font-size:12px; } .chkitem input{ flex:none; cursor:pointer; } .chkitem .chktext{ flex:1; cursor:text; } .chkitem.done .chktext{ text-decoration:line-through; color:#aab0bd; } .chkitem .delbtn{ opacity:0; } .chkitem:hover .delbtn{ opacity:1; }
+  .subadd2{ align-self:flex-start; border:1px dashed #c7ccd6; background:#fff; color:#8a92a3; border-radius:7px; padding:3px 9px; font-size:11px; font-weight:600; cursor:pointer; margin-top:4px; } .subadd2:hover{ background:#eef2ff; border-color:#9bb4f5; color:#1d4ed8; }
+  .ttitle{ font-weight:700; font-size:13px; line-height:1.3; cursor:text; margin:0; flex:1; } .ttitle:hover{ text-decoration:underline dotted; }
+  .inlineedit{ width:100%; border:1px solid #9bb4f5; border-radius:6px; padding:5px 7px; font:inherit; line-height:1.35; resize:none; overflow:hidden; box-sizing:border-box; }
+  .deschdr{ display:flex; align-items:center; gap:6px; cursor:pointer; font-size:11px; font-weight:700; color:#5b6472; padding:3px 0; margin-top:6px; } .deschdr .caret{ font-size:10px; color:#8a92a3; width:10px; }
+  .desc{ font-size:12px; color:#5b6472; line-height:1.4; white-space:pre-wrap; cursor:text; padding:2px 0; } .desc:hover{ text-decoration:underline dotted; }
+  .cardcaret{ border:none; background:none; cursor:pointer; font-size:11px; color:#8a92a3; padding:0 4px 0 0; flex:none; line-height:1.3; } .cardcaret:hover{ color:#1d4ed8; }
+  .foldmeta{ display:flex; align-items:center; gap:7px; margin-top:5px; padding-left:18px; } .tcard.folded{ padding-bottom:8px; }
+  .ttag{ border:none; border-radius:7px; padding:3px 8px; font-size:10px; font-weight:700; cursor:pointer; } .type-packaging{ background:#fde9c8; color:#92500e; } .type-website{ background:#dbeafe; color:#1d4ed8; } .type-ops{ background:#eceef2; color:#5b6472; }
+  .card[draggable=true],.tcard[draggable=true]{ cursor:grab; } .dragover{ outline:2px dashed #2563eb; outline-offset:3px; border-radius:10px; background:#f0f5ff; } .tcard.insert{ box-shadow:0 -3px 0 #2563eb inset; }
+  .cols4{ grid-template-columns:repeat(4,1fr); } @media(max-width:900px){ .cols4{ grid-template-columns:repeat(2,1fr); } }
+  .dailybar{ display:flex; align-items:center; gap:8px; margin-bottom:12px; font-size:12.5px; color:#5b6472; font-weight:600; } .sortsel{ border:1px solid #d5d9e0; border-radius:8px; padding:5px 8px; font:inherit; font-size:12.5px; }
+  .filterbar{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:12px; } .fblab{ font-size:12px; font-weight:700; color:#5b6472; } .fchip{ border:1px solid #d5d9e0; background:#fff; color:#5b6472; border-radius:20px; padding:4px 11px; font-size:11.5px; font-weight:600; cursor:pointer; } .fchip.on{ background:#1f2430; color:#fff; border-color:#1f2430; } .fchip:hover{ border-color:#9bb4f5; }
+  .popmenu{ position:fixed; z-index:10000; background:#fff; border:1px solid #e0e4ea; border-radius:10px; box-shadow:0 10px 30px rgba(20,30,50,.22); padding:5px; min-width:190px; } .popitem{ display:flex; align-items:center; gap:8px; padding:7px 9px; border-radius:7px; font-size:12px; cursor:pointer; color:#39404e; } .popitem:hover{ background:#f0f2f5; } .popitem.sel{ font-weight:700; } .popitem.danger{ color:#dc2626; } .pdot{ width:12px; height:12px; border-radius:3px; flex:none; } .popdiv{ height:1px; background:#eef0f3; margin:4px 2px; } .popcap{ font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:#aab0bd; padding:5px 9px 3px; }
+  .overlay{ position:fixed; inset:0; background:rgba(20,28,45,.32); display:flex; align-items:center; justify-content:center; z-index:9999; padding:20px; } .modal{ background:#fff; border-radius:12px; padding:18px; width:min(440px,92vw); box-shadow:0 12px 40px rgba(20,30,50,.25); } .modal.big{ width:min(620px,94vw); max-height:88vh; overflow:auto; } .modal .mlab{ font-size:14px; font-weight:650; margin-bottom:12px; color:#1f2430; } .modal input,.modal textarea{ width:100%; border:1px solid #d5d9e0; border-radius:8px; padding:9px 10px; font:inherit; margin-bottom:14px; } .modal textarea{ min-height:90px; resize:vertical; } .modal .mrow{ display:flex; justify-content:flex-end; gap:8px; }
+  .dsec{ margin-top:14px; } .dsec .dh{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:#8a92a3; margin-bottom:6px; } .dsec textarea,.dsec input{ margin-bottom:0; } .specbox{ background:#f7f8fa; border:1px solid #e6e9ee; border-radius:9px; padding:10px; max-height:260px; overflow:auto; font-size:11.5px; color:#5b6472; } .spec{ white-space:pre-wrap; word-break:break-word; margin:0; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:11px; }`;
+  const s=document.createElement('style'); s.textContent=css; document.head.appendChild(s); }
+
+boot();
+
+</script>
+</body>
+</html>
