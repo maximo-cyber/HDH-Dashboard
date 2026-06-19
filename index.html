@@ -2397,8 +2397,23 @@ function rollup(items){ const v=(items||[]).map(i=>i.status); if(!v.length)retur
 function slugify(s){ return s.toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,48)||('item-'+Date.now().toString(36)); }
 function uniqueId(base,exists){ let id=base,n=2; while(exists(id)){ id=base+'-'+n; n++; } return id; }
 function esc(s){ return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function ensure(){ DB.inbox=DB.inbox||[]; DB.ideas=DB.ideas||[]; DB.products.forEach(p=>{p.items=p.items||[];}); DB.web.forEach(w=>{w.items=w.items||[];}); DB.tasks.forEach(t=>{ if(!t.type)t.type='ops'; if(t.urgent===undefined)t.urgent=false; }); }
-function statusOf(o){ return o.override || rollup(o.items); }
+function ensure(){ DB.inbox=DB.inbox||[]; DB.ideas=DB.ideas||[];
+  if(Array.isArray(DB.web)){ /* migrate OLD shape (products.items + web[]) -> NEW (products.packaging + products.web + pages[]) */
+    const pdpByPid={}, oldPages=[];
+    DB.web.forEach(w=>{ const pid=(w.group==='pdp'&&w.id&&w.id.indexOf('pdp-')===0)?w.id.slice(4):null; if(pid){ pdpByPid[pid]=w; } else { const g={id:w.id,name:w.name,items:w.items||[],notes:w.notes||''}; if(w.override)g.override=w.override; oldPages.push(g); } });
+    DB.products.forEach(p=>{ p.packaging=p.packaging||p.items||[]; if(p.web===undefined){ const w=pdpByPid[p.id]; p.web=w?(w.items||[]):[]; if(w){ if(!p.notes&&w.notes)p.notes=w.notes; if(w.override)p.webOverride=w.override; } } delete p.items; });
+    DB.pages=(Array.isArray(DB.pages)?DB.pages:[]).concat(oldPages); delete DB.web; }
+  DB.pages=DB.pages||[];
+  DB.products.forEach(p=>{ p.packaging=p.packaging||[]; p.web=p.web||[]; });
+  DB.pages.forEach(g=>{ g.items=g.items||[]; });
+  DB.tasks.forEach(t=>{ if(!t.type)t.type='ops'; if(t.urgent===undefined)t.urgent=false; }); }
+function _res(scope,id){ if(scope==='page'){ const g=DB.pages.find(x=>x.id===id); return g?{o:g,arr:'items',ovf:'override'}:null; } const p=DB.products.find(x=>x.id===id); if(!p)return null; return scope==='web'?{o:p,arr:'web',ovf:'webOverride'}:{o:p,arr:'packaging',ovf:'override'}; }
+function pkgStatus(p){ return p.override||rollup(p.packaging); }
+function webStatus(p){ return p.webOverride||rollup(p.web); }
+function pageStatus(g){ return g.override||rollup(g.items); }
+function scopeStatus(scope,id){ const r=_res(scope,id); return r?(r.o[r.ovf]||rollup(r.o[r.arr])):'not-started'; }
+function combinedStatus(p){ const parts=[]; if((p.packaging||[]).length)parts.push({status:pkgStatus(p)}); if((p.web||[]).length)parts.push({status:webStatus(p)}); return parts.length?rollup(parts):'not-started'; }
+function statusOf(o){ return o.override||rollup(o.items); }
 function chip(ro){ return `<span class="chip s-${ro}">${LABELS[ro]}</span>`; }
 function isCollapsed(k){ return collapsed.has(k); }
 function toggleCollapse(k){ collapsed.has(k)?collapsed.delete(k):collapsed.add(k); saveCollapsed(); render(); }
@@ -2408,8 +2423,8 @@ function toggleFilter(k){ filters[k]=!filters[k]; saveFilters(); render(); }
 function visible(ro){ return !filters[ro]; }
 
 /* ---------- sub-items ---------- */
-function itemsOf(kind,id){ const o=(kind==='prod'?DB.products:DB.web).find(x=>x.id===id); return o?o.items:null; }
-function nameOf(kind,id){ const o=(kind==='prod'?DB.products:DB.web).find(x=>x.id===id); return o?o.name:id; }
+function itemsOf(scope,id){ const r=_res(scope,id); return r?r.o[r.arr]:null; }
+function nameOf(scope,id){ const r=_res(scope,id); return r?r.o.name:id; }
 function setSub(kind,id,idx,status){ closeMenus(); const arr=itemsOf(kind,id); const it=arr[idx]; if(!it||it.status===status)return; it.status=status; save(); render(); }
 function renameSub(kind,id,idx){ closeMenus(); const arr=itemsOf(kind,id); askText("Rename part", arr[idx].label, v=>{ arr[idx].label=v; save(); render(); }); }
 function removeSub(kind,id,idx){ closeMenus(); itemsOf(kind,id).splice(idx,1); save(); render(); }
@@ -2426,25 +2441,26 @@ function subPill(kind,id,idx,it){ return `<button class="subpill s-${it.status}"
 function pillsHtml(kind,id,items){ return `<div class="pills">`+items.map((it,idx)=>subPill(kind,id,idx,it)).join('')+`<button class="subadd" title="Add part" onclick="addSubInline(event,'${kind}','${id}')">＋</button></div>`; }
 
 /* ---------- overall status ---------- */
-function openOverallMenu(ev,kind,id){ ev.stopPropagation(); closeMenus(); const o=(kind==='prod'?DB.products:DB.web).find(x=>x.id===id); const cur=statusOf(o); const m=document.createElement('div'); m.className='popmenu';
-  m.innerHTML=`<div class="popcap">Overall status</div>`+ORDER.map(s=>`<div class="popitem ${s===cur&&o.override?'sel':''}" onclick="setOverall('${kind}','${id}','${s}')"><span class="pdot s-${s}"></span>${LABELS[s]}</div>`).join('')+`<div class="popdiv"></div><div class="popitem act" onclick="clearOverall('${kind}','${id}')">⟲ Auto (from parts)</div>`;
+function openOverallMenu(ev,scope,id){ ev.stopPropagation(); closeMenus(); const cur=scopeStatus(scope,id); const rr=_res(scope,id); const ovr=rr?rr.o[rr.ovf]:null; const m=document.createElement('div'); m.className='popmenu';
+  m.innerHTML=`<div class="popcap">Overall status</div>`+ORDER.map(s=>`<div class="popitem ${s===cur&&ovr?'sel':''}" onclick="setOverall('${scope}','${id}','${s}')"><span class="pdot s-${s}"></span>${LABELS[s]}</div>`).join('')+`<div class="popdiv"></div><div class="popitem act" onclick="clearOverall('${scope}','${id}')">⟲ Auto (from parts)</div>`;
   document.body.appendChild(m); const r=ev.currentTarget.getBoundingClientRect(); m.style.left=Math.min(r.left,window.innerWidth-210)+'px'; m.style.top=Math.min(r.bottom+4,window.innerHeight-300)+'px';
   setTimeout(()=>document.addEventListener('click',closeMenus,{once:true}),0); }
-function setOverall(kind,id,s){ closeMenus(); const o=(kind==='prod'?DB.products:DB.web).find(x=>x.id===id); o.override=s; save(); render(); }
-function clearOverall(kind,id){ closeMenus(); const o=(kind==='prod'?DB.products:DB.web).find(x=>x.id===id); delete o.override; save(); render(); }
-function overallChip(kind,id,o){ const ro=statusOf(o); return `<button class="chip s-${ro} chipbtn ${o.override?'manual':''}" title="Overall status${o.override?' (manual override)':' (auto from parts)'} — click to change" onclick="openOverallMenu(event,'${kind}','${id}')">${LABELS[ro]}${o.override?' ✱':''}</button>`; }
+function setOverall(scope,id,s){ closeMenus(); const r=_res(scope,id); if(r){ r.o[r.ovf]=s; save(); render(); } }
+function clearOverall(scope,id){ closeMenus(); const r=_res(scope,id); if(r){ delete r.o[r.ovf]; save(); render(); } }
+function overallChip(scope,id){ const ro=scopeStatus(scope,id); const r=_res(scope,id); const ovr=r?r.o[r.ovf]:null; return `<button class="chip s-${ro} chipbtn ${ovr?'manual':''}" title="Overall status${ovr?' (manual override)':' (auto from parts)'} — click to change" onclick="openOverallMenu(event,'${scope}','${id}')">${LABELS[ro]}${ovr?' ✱':''}</button>`; }
 
 /* ---------- products / web ---------- */
-function setProdNotes(id,val){ const p=DB.products.find(x=>x.id===id); if((p.notes||'')===val)return; p.notes=val; save(); render(); }
-function setProdLinks(id,val){ const p=DB.products.find(x=>x.id===id); p.links=val; save(); }
+function setProdNotes(id,val){ const p=DB.products.find(x=>x.id===id); if(!p||(p.notes||'')===val)return; p.notes=val; save(); render(); }
+function setProdLinks(id,val){ const p=DB.products.find(x=>x.id===id); if(p){ p.links=val; save(); } }
 function editProdNotes(id){ const p=DB.products.find(x=>x.id===id); askTextarea(`Note — ${p.name}`, p.notes||"", v=>setProdNotes(id,v)); }
-function addProduct(lineId,ev){ if(ev)ev.stopPropagation(); askText("New product name","",name=>{ const id=uniqueId(slugify(name),x=>DB.products.some(p=>p.id===x)); DB.products.push({id,name,line:lineId,active:true,items:[{label:"Bottle",status:"not-started"},{label:"Box",status:"not-started"},{label:"Manual",status:"not-started"},{label:"Legal",status:"not-started"}],notes:""}); save(); render(); }); }
+function addProduct(lineId,ev){ if(ev)ev.stopPropagation(); askText("New product name","",name=>{ const id=uniqueId(slugify(name),x=>DB.products.some(p=>p.id===x)); DB.products.push({id,name,line:lineId,active:true,packaging:[{label:"Bottle",status:"not-started"},{label:"Box",status:"not-started"},{label:"Manual",status:"not-started"},{label:"Amazon barcode",status:"not-started"}],web:[],notes:""}); save(); render(); }); }
 function moveProduct(id,lineId){ const p=DB.products.find(x=>x.id===id); if(!p||p.line===lineId)return; p.line=lineId; save(); render(); }
-function delProduct(id){ const p=DB.products.find(x=>x.id===id); confirmBox(`Delete "${p.name}"?`,()=>{ DB.products=DB.products.filter(x=>x.id!==id); save(); render(); }); }
-function setWebNotes(id,val){ const w=DB.web.find(x=>x.id===id); if((w.notes||'')===val)return; w.notes=val; save(); render(); }
-function editWebNotes(id){ const w=DB.web.find(x=>x.id===id); askTextarea(`Note — ${w.name}`, w.notes||"", v=>setWebNotes(id,v)); }
-function addWeb(group,ev){ if(ev)ev.stopPropagation(); askText(group==='pdp'?"New PDP name":"New page name","",name=>{ const id=uniqueId(slugify((group==='pdp'?'pdp-':'')+name),x=>DB.web.some(w=>w.id===x)); const items=group==='pdp'?["Assets","Layout","Carousel","Offer","Copy"]:["Assets","Layout","Copy"]; DB.web.push({id,name,group,items:items.map(l=>({label:l,status:"not-started"})),notes:""}); save(); render(); }); }
-function delWeb(id){ const w=DB.web.find(x=>x.id===id); confirmBox(`Delete "${w.name}"?`,()=>{ DB.web=DB.web.filter(x=>x.id!==id); save(); render(); }); }
+function delProduct(id){ const p=DB.products.find(x=>x.id===id); confirmBox(`Delete "${p.name}"? (removes it from Packaging and Website)`,()=>{ DB.products=DB.products.filter(x=>x.id!==id); save(); render(); }); }
+function addPdp(id){ const p=DB.products.find(x=>x.id===id); if(!p||(p.web||[]).length)return; p.web=["Assets","Layout","Carousel","Offer","Copy"].map(l=>({label:l,status:"not-started"})); save(); render(); }
+function setPageNotes(id,val){ const g=DB.pages.find(x=>x.id===id); if(!g||(g.notes||'')===val)return; g.notes=val; save(); render(); }
+function editPageNotes(id){ const g=DB.pages.find(x=>x.id===id); askTextarea(`Note — ${g.name}`, g.notes||"", v=>setPageNotes(id,v)); }
+function addPage(ev){ if(ev)ev.stopPropagation(); askText("New page name","",name=>{ const id=uniqueId(slugify(name),x=>DB.pages.some(g=>g.id===x)); DB.pages.push({id,name,items:["Assets","Layout","Copy"].map(l=>({label:l,status:"not-started"})),notes:""}); save(); render(); }); }
+function delPage(id){ const g=DB.pages.find(x=>x.id===id); confirmBox(`Delete "${g.name}"?`,()=>{ DB.pages=DB.pages.filter(x=>x.id!==id); save(); render(); }); }
 
 /* ---------- tasks ---------- */
 function setTaskStatus(id,val){ const t=DB.tasks.find(x=>x.id===id); if(t.status===val)return; t.status=val; save(); render(); }
@@ -2495,9 +2511,11 @@ function dragEnd(){ drag=null; document.querySelectorAll('.dragover,.insert').fo
 
 /* ---------- detail ---------- */
 function qa(id,name){ tell(`QA the latest packaging/design for "${name}" against its spec in FORCHICS Brain (products/${id}.md). Cross-check USPs, dimensions, net weight, on-pack ingredients, how-to-use (short), warnings, legal copy, and required badges. Report any mismatch.`); }
-function openDetail(id){ const p=DB.products.find(x=>x.id===id); if(!p)return; const ro=statusOf(p); const ov=document.createElement('div'); ov.className='overlay';
-  ov.innerHTML=`<div class="modal big"><div class="cardtop"><div><div class="mlab" style="margin:0">${esc(p.name)}</div><div class="muted" style="font-size:11px;margin-top:3px">${DB.lines[p.line]?.label||p.line} · ${DB.lines[p.line]?.factory||''} &nbsp;${chip(ro)}</div></div><button class="delbtn" id="dClose">✕</button></div>
-    <div class="dsec"><div class="dh">Parts &amp; status</div>${pillsHtml('prod',p.id,p.items)}</div>
+function openDetail(id){ const p=DB.products.find(x=>x.id===id); if(!p)return; const cs=combinedStatus(p); const hasWeb=(p.web||[]).length>0; const ov=document.createElement('div'); ov.className='overlay';
+  const webSec=hasWeb?`<div class="dsec"><div class="dh">🌐 Website / PDP &nbsp;${chip(webStatus(p))}</div>${pillsHtml('web',p.id,p.web)}</div>`:`<div class="dsec"><div class="dh">🌐 Website / PDP</div><div class="muted" style="font-size:12px">No PDP yet · <button class="linkish" onclick="addPdp('${p.id}');this.closest('.overlay').remove();openDetail('${p.id}')">＋ add PDP parts</button></div></div>`;
+  ov.innerHTML=`<div class="modal big"><div class="cardtop"><div><div class="mlab" style="margin:0">${esc(p.name)}</div><div class="muted" style="font-size:11px;margin-top:3px">${DB.lines[p.line]?.label||p.line} · ${DB.lines[p.line]?.factory||''} &nbsp;Combined ${chip(cs)}</div></div><button class="delbtn" id="dClose">✕</button></div>
+    <div class="dsec"><div class="dh">📦 Packaging &nbsp;${chip(pkgStatus(p))}</div>${pillsHtml('pkg',p.id,p.packaging)}</div>
+    ${webSec}
     <div class="dsec"><div class="dh">Note</div><textarea id="dNote">${esc(p.notes||"")}</textarea></div>
     <div class="dsec"><div class="dh">Links</div><input id="dLinks" value="${esc(p.links||"")}"></div>
     <div class="dsec"><div class="dh">Spec from the Brain <span class="muted" style="font-weight:400;text-transform:none;letter-spacing:0">— products/${p.id}.md</span></div><div id="dSpec" class="specbox">Loading spec…</div></div>
@@ -2508,15 +2526,21 @@ function openDetail(id){ const p=DB.products.find(x=>x.id===id); if(!p)return; c
   loadSpec(p.id, ov.querySelector('#dSpec')); }
 
 /* ---------- cards ---------- */
-function sticky(kind,id,notes){ return `<div class="sticky ${notes?'':'empty'}" onclick="${kind==='prod'?'editProdNotes':'editWebNotes'}('${id}')">${notes?esc(notes):'＋ note'}</div>`; }
-function prodCard(p){ const ro=statusOf(p);
+function sticky(scope,id,notes){ const fn=scope==='page'?'editPageNotes':'editProdNotes'; return `<div class="sticky ${notes?'':'empty'}" onclick="${fn}('${id}')">${notes?esc(notes):'＋ note'}</div>`; }
+function crossBadge(icon,label,status,has,pid){ return `<button class="xbadge${has?'':' none'}" title="${label}: ${has?LABELS[status]:'no track yet'} — open detail" onclick="event.stopPropagation();openDetail('${pid}')">${icon}${has?`<span class="pdot s-${status}"></span>`:'<span class="pcaret">–</span>'}</button>`; }
+function prodCard(p){ const ro=pkgStatus(p);
   return `<div class="card bg-${ro}" draggable="true" ondragstart="dragStart('product','${p.id}',event)" ondragend="dragEnd()">
-    <div class="chiprow">${overallChip('prod',p.id,p)}<div class="topbtns"><button class="iconbtn" title="Details" onclick="openDetail('${p.id}')">⤢</button><button class="delbtn" title="Delete" onclick="delProduct('${p.id}')">✕</button></div></div>
+    <div class="chiprow">${overallChip('pkg',p.id)}<div class="topbtns">${crossBadge('🌐','Website',webStatus(p),(p.web||[]).length>0,p.id)}<button class="iconbtn" title="Details" onclick="openDetail('${p.id}')">⤢</button><button class="delbtn" title="Delete" onclick="delProduct('${p.id}')">✕</button></div></div>
     <div class="cardtop"><h3 class="clickable" onclick="openDetail('${p.id}')">${esc(p.name)}</h3></div>
-    ${pillsHtml('prod',p.id,p.items)}${sticky('prod',p.id,p.notes)}</div>`; }
-function webCard(w){ const ro=statusOf(w);
-  return `<div class="card bg-${ro}"><div class="chiprow">${overallChip('web',w.id,w)}<div class="topbtns"><button class="delbtn" onclick="delWeb('${w.id}')">✕</button></div></div>
-    <div class="cardtop"><h3>${esc(w.name)}</h3></div>${pillsHtml('web',w.id,w.items)}${sticky('web',w.id,w.notes)}</div>`; }
+    ${pillsHtml('pkg',p.id,p.packaging)}${sticky('prod',p.id,p.notes)}</div>`; }
+function webCard(p){ const ro=webStatus(p); const hasWeb=(p.web||[]).length>0;
+  return `<div class="card bg-${ro}">
+    <div class="chiprow">${hasWeb?overallChip('web',p.id):`<span class="chip s-not-started" style="opacity:.6">No PDP yet</span>`}<div class="topbtns">${crossBadge('📦','Packaging',pkgStatus(p),(p.packaging||[]).length>0,p.id)}<button class="iconbtn" title="Details" onclick="openDetail('${p.id}')">⤢</button></div></div>
+    <div class="cardtop"><h3 class="clickable" onclick="openDetail('${p.id}')">${esc(p.name)}</h3></div>
+    ${hasWeb?pillsHtml('web',p.id,p.web):`<div class="muted" style="font-size:12px;padding:6px 0">No PDP yet · <button class="linkish" onclick="addPdp('${p.id}')">＋ add PDP parts</button></div>`}${sticky('prod',p.id,p.notes)}</div>`; }
+function pageCard(g){ const ro=pageStatus(g);
+  return `<div class="card bg-${ro}"><div class="chiprow">${overallChip('page',g.id)}<div class="topbtns"><button class="delbtn" onclick="delPage('${g.id}')">✕</button></div></div>
+    <div class="cardtop"><h3>${esc(g.name)}</h3></div>${pillsHtml('page',g.id,g.items)}${sticky('page',g.id,g.notes)}</div>`; }
 function taskCard(t){ const link=t.link?`<span class="linktag">${esc(t.link)}</span>`:""; const type=t.type||'ops';
   const subs=t.subtasks||[]; const dn=subs.filter(s=>s.done).length; const folded=isCollapsed('task:'+t.id);
   let chk='';
@@ -2546,29 +2570,27 @@ function renderFilterbar(){ const chipBtn=(k,label)=>`<button class="fchip ${fil
   ['fb-pkg','fb-web'].forEach(id=>{ const fb=document.getElementById(id); if(fb) fb.innerHTML=html; }); }
 function renderPackaging(){ const byF={}; Object.entries(DB.lines).forEach(([lid,l])=>{ (byF[l.factory]=byF[l.factory]||[]).push(lid); }); let h="";
   for(const fac of Object.keys(byF)){ h+=collHeader('pkg:'+fac,fac,''); if(!isCollapsed('pkg:'+fac)){ h+='<div class="secbody">';
-    for(const lid of byF[fac]){ const all=DB.products.filter(p=>p.line===lid); const prods=all.filter(p=>visible(statusOf(p)));
+    for(const lid of byF[fac]){ const all=DB.products.filter(p=>p.line===lid); const prods=all.filter(p=>visible(pkgStatus(p)));
       const key='pkg:'+fac+':'+lid;
       h+=collHeader(key,`${DB.lines[lid].label} <span class="muted">(${prods.length}/${all.length})</span>`,`<button class="addbtn" onclick="addProduct('${lid}',event)">＋ product</button>`);
       if(!isCollapsed(key)) h+=`<div class="grid linewrap" data-line="${lid}" ondragover="if(drag&&drag.kind==='product'){event.preventDefault();this.classList.add('dragover')}" ondragleave="this.classList.remove('dragover')" ondrop="this.classList.remove('dragover');if(drag&&drag.kind==='product')moveProduct(drag.id,'${lid}')">${prods.map(prodCard).join("")||'<div class="muted" style="font-size:12px">None shown.</div>'}</div>`; } h+='</div>'; } }
   document.getElementById('pkgbody').innerHTML=h; }
-function lineOfPdp(w){ const pid=(w.id&&w.id.indexOf('pdp-')===0)?w.id.slice(4):null; const p=pid&&DB.products.find(x=>x.id===pid); return p?p.line:null; }
 function renderWeb(){ const PDP_GROUPS=[["Hair Line",["hair"]],["Eyelash/Eyebrow",["eyebrow-eyelash"]],["Supplement Line",["supplements"]],["Perfumes + Fragrances",["perfume","arousal"]]];
-  const pa=DB.web.filter(w=>w.group==='pdp'), ga=DB.web.filter(w=>w.group!=='pdp');
-  let h=collHeader('web:pdp',`PDPs — by line <span class="muted">(${pa.filter(w=>visible(statusOf(w))).length}/${pa.length})</span>`,`<button class="addbtn" onclick="addWeb('pdp',event)">＋ PDP</button>`);
+  let h=collHeader('web:pdp',`Product pages (PDPs) — by line`,'');
   if(!isCollapsed('web:pdp')){
     h+='<div class="secbody">'; const used=new Set();
     for(const [label,lines] of PDP_GROUPS){
-      const all=pa.filter(w=>lines.includes(lineOfPdp(w))); all.forEach(w=>used.add(w.id));
-      const shown=all.filter(w=>visible(statusOf(w))); const key='web:pdp:'+label.replace(/[^a-z]/gi,'').toLowerCase();
+      const all=DB.products.filter(p=>lines.includes(p.line)); all.forEach(p=>used.add(p.id));
+      const shown=all.filter(p=>visible(webStatus(p))); const key='web:pdp:'+label.replace(/[^a-z]/gi,'').toLowerCase();
       h+=collHeader(key,`${label} <span class="muted">(${shown.length}/${all.length})</span>`,'');
       if(!isCollapsed(key)) h+=`<div class="grid">${shown.map(webCard).join("")||'<div class="muted" style="font-size:12px">None shown.</div>'}</div>`;
     }
-    const other=pa.filter(w=>!used.has(w.id));
-    if(other.length){ const shown=other.filter(w=>visible(statusOf(w))); h+=collHeader('web:pdp:other',`Other <span class="muted">(${shown.length}/${other.length})</span>`,''); if(!isCollapsed('web:pdp:other')) h+=`<div class="grid">${shown.map(webCard).join("")}</div>`; }
+    const other=DB.products.filter(p=>!used.has(p.id));
+    if(other.length){ const shown=other.filter(p=>visible(webStatus(p))); h+=collHeader('web:pdp:other',`Other <span class="muted">(${shown.length}/${other.length})</span>`,''); if(!isCollapsed('web:pdp:other')) h+=`<div class="grid">${shown.map(webCard).join("")}</div>`; }
     h+='</div>';
   }
-  h+=collHeader('web:pages',`Pages <span class="muted">(${ga.filter(w=>visible(statusOf(w))).length}/${ga.length})</span>`,`<button class="addbtn" onclick="addWeb('page',event)">＋ page</button>`);
-  if(!isCollapsed('web:pages')) h+=`<div class="grid">${ga.filter(w=>visible(statusOf(w))).map(webCard).join("")||'<div class="muted" style="font-size:12px">None shown.</div>'}</div>`;
+  h+=collHeader('web:pages',`Pages <span class="muted">(${DB.pages.filter(g=>visible(pageStatus(g))).length}/${DB.pages.length})</span>`,`<button class="addbtn" onclick="addPage(event)">＋ page</button>`);
+  if(!isCollapsed('web:pages')) h+=`<div class="grid">${DB.pages.filter(g=>visible(pageStatus(g))).map(pageCard).join("")||'<div class="muted" style="font-size:12px">None shown.</div>'}</div>`;
   document.getElementById('webbody').innerHTML=h; }
 function renderDaily(){ LANES.forEach(o=>{ const items=sortItems(DB.tasks.filter(t=>t.owner===o)); const lane=document.getElementById(OWNER_LANE[o]); if(!lane)return;
   lane.innerHTML=items.map(t=>taskCard(t).replace(/'OWNER'/g,`'${o}'`)).join("")||`<div class="muted" style="font-size:12px">Drop here or add.</div>`;
@@ -2593,7 +2615,8 @@ function injectStyles(){ const css=`
   .s-not-started{ background:#eef0f2; color:#6b7280; } .s-designing{ background:#dbeafe; color:#1d4ed8; } .s-producing-samples{ background:#cffafe; color:#0e7490; } .s-needs-review{ background:#ede9fe; color:#6d28d9; } .s-approved{ background:#dcfce7; color:#15803d; } .s-in-production{ background:#fee2e2; color:#b91c1c; } .s-stuck{ background:#ffedd5; color:#c2410c; } .s-paused{ background:#fef9c3; color:#854d0e; }
   .bg-not-started{ background:#fcfcfd; } .bg-designing{ background:#eff5ff; } .bg-producing-samples{ background:#f0fdff; } .bg-needs-review{ background:#f6f2ff; } .bg-approved{ background:#eefbf1; } .bg-in-production{ background:#fef3f3; } .bg-stuck{ background:#fff7ed; } .bg-paused{ background:#fefce8; }
   .chiprow{ display:flex; align-items:center; gap:6px; margin:0 0 8px; } .chip{ display:inline-block; font-size:10px; font-weight:700; padding:3px 9px; border-radius:20px; letter-spacing:.3px; } .chipbtn{ border:none; cursor:pointer; } .chipbtn:hover{ filter:brightness(.95); } .chipbtn.manual{ box-shadow:0 0 0 1.5px #94a3b8 inset; } .chiprow .topbtns{ margin-left:auto; }
-  .cardtop{ display:flex; align-items:flex-start; justify-content:space-between; gap:6px; } .cardtop p{ margin:0; } .topbtns{ display:flex; gap:2px; flex:none; }
+  .cardtop{ display:flex; align-items:flex-start; justify-content:space-between; gap:6px; } .cardtop p{ margin:0; } .topbtns{ display:flex; gap:2px; flex:none; align-items:center; }
+  .xbadge{ display:inline-flex; align-items:center; gap:3px; border:1px solid #e6e9ee; background:#fff; border-radius:7px; padding:3px 6px; font-size:12px; line-height:1; cursor:pointer; } .xbadge:hover{ background:#f6f8fa; } .xbadge.none{ opacity:.5; } .xbadge .pdot{ width:9px; height:9px; } .xbadge .pcaret{ font-size:10px; opacity:.6; } .linkish{ background:none; border:none; color:#2563eb; cursor:pointer; font:inherit; font-size:12px; padding:0; text-decoration:underline; }
   .clickable{ cursor:pointer; } .clickable:hover{ text-decoration:underline; }
   .iconbtn,.delbtn{ border:none; background:none; cursor:pointer; font-size:12px; line-height:1; padding:2px 4px; border-radius:5px; flex:none; color:#aab0bd; } .iconbtn:hover{ background:#eef2ff; color:#1d4ed8; } .delbtn:hover{ background:#fde8e8; color:#dc2626; }
   .addbtn{ margin-left:auto; border:1px dashed #c7ccd6; background:#fff; color:#5b6472; border-radius:7px; padding:2px 9px; font-size:11px; font-weight:600; cursor:pointer; } .addbtn:hover{ background:#eef2ff; border-color:#9bb4f5; color:#1d4ed8; }
