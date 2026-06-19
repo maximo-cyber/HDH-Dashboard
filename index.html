@@ -83,11 +83,9 @@ textarea{ flex:1; min-width:280px; min-height:80px; border:1px solid #d5d9e0; bo
 <div class="wrap">
   <div class="stickytop">
   <div class="top">
-    <div class="brand">FORCHICS BOARD<small>One dataset · status + daily + inbox + next</small></div>
+    <div class="brand">FORCHICS BOARD<small>One dataset · status + daily + inbox</small></div>
     <div class="toolbar">
       <span id="saveind" class="saveind">● connecting…</span>
-      <button class="btn" onclick="exportJSON()">Export JSON</button>
-      <button class="btn" onclick="resetSeed()">Reset</button>
     </div>
   </div>
 
@@ -95,7 +93,6 @@ textarea{ flex:1; min-width:280px; min-height:80px; border:1px solid #d5d9e0; bo
     <button class="tab active" data-tab="packaging" onclick="setTab('packaging')">📦 Packaging</button>
     <button class="tab" data-tab="web" onclick="setTab('web')">🌐 Web roadmap</button>
     <button class="tab" data-tab="daily" onclick="setTab('daily')">Daily</button>
-    <button class="tab" data-tab="next" onclick="setTab('next')">Next</button>
   </div>
   </div><!--/stickytop-->
 
@@ -128,7 +125,7 @@ textarea{ flex:1; min-width:280px; min-height:80px; border:1px solid #d5d9e0; bo
     <div class="dailybar">Sort:
       <select id="sortSel" class="sortsel" onchange="setSort(this.value)">
         <option value="manual">Manual</option>
-        <option value="working">🛠 Working + 🔥 urgent first</option>
+        <option value="working" selected>🛠 Working + 🔥 urgent first</option>
         <option value="urgent">🔥 Urgent first</option>
         <option value="status">By status</option>
         <option value="mine">★ Mine first</option>
@@ -147,12 +144,6 @@ textarea{ flex:1; min-width:280px; min-height:80px; border:1px solid #d5d9e0; bo
     </div>
   </div>
 
-  <!-- NEXT -->
-  <div id="next" class="pane hidden">
-    <div class="help">A first pass at <b>what deserves attention now</b>, computed from the board. For a real prioritized plan against your long-term goals, hit the button — I read the board state and propose the order.</div>
-    <button class="btn primary" style="margin-bottom:18px" onclick="planDay()">Plan my day with Claude</button>
-    <div id="next-content"></div>
-  </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -2343,7 +2334,7 @@ const TYPE_LABEL = {packaging:"Packaging",website:"Website",ops:"Ops"};
 const LANES = ["we","hamid","factory","ideas"];
 const OWNER_LANE = {we:"lane-we",hamid:"lane-hamid",factory:"lane-factory",ideas:"lane-ideas"};
 const CKEY="forchics_collapsed_v1", FKEY="forchics_filters_v1";
-let DB, drag=null, collapsed=new Set(), filters={}, sortMode="manual", tab="packaging";
+let DB, drag=null, collapsed=new Set(), filters={}, sortMode="working", tab="packaging";
 let dirHandle=null, boardHandle=null, lastMod=0, saveTimer=null, saving=false, suppressUntil=0, pollId=null;
 
 /* ---------- Supabase persistence (instant + live + multi-user) ---------- */
@@ -2604,7 +2595,7 @@ function renderDaily(){ LANES.forEach(o=>{ const items=sortItems(DB.tasks.filter
   lane.innerHTML=items.map(t=>taskCard(t).replace(/'OWNER'/g,`'${o}'`)).join("")||`<div class="muted" style="font-size:12px">Drop here or add.</div>`;
   const c=document.getElementById("c-"+o); if(c) c.textContent=items.length;
   lane.ondragover=e=>{ if(drag&&drag.kind==='task'){ e.preventDefault(); lane.classList.add('dragover'); } }; lane.ondragleave=()=>lane.classList.remove('dragover'); lane.ondrop=e=>{ lane.classList.remove('dragover'); if(drag&&drag.kind==='task') moveTask(drag.id,null,o); }; }); }
-function render(){ ensure(); renderFilterbar(); renderPackaging(); renderWeb(); renderDaily(); document.getElementById('next-content').innerHTML=nextContent(); }
+function render(){ ensure(); renderFilterbar(); renderPackaging(); renderWeb(); renderDaily(); }
 
 /* ---------- nav / tools ---------- */
 function setTab(t){ tab=t; document.querySelectorAll('.tab').forEach(e=>e.classList.toggle('active',e.dataset.tab===t)); document.querySelectorAll('.pane').forEach(p=>p.classList.add('hidden')); document.getElementById(t).classList.remove('hidden'); }
