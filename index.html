@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>FORCHICS Board</title>
+<title>Powerpuff Designers Dashboard</title>
 <style>
 :root{ color-scheme: light; }
 *{ box-sizing:border-box; }
@@ -83,7 +83,7 @@ textarea{ flex:1; min-width:280px; min-height:80px; border:1px solid #d5d9e0; bo
 <div class="wrap">
   <div class="stickytop">
   <div class="top">
-    <div class="brand">FORCHICS BOARD<small>One dataset · status + daily + inbox</small></div>
+    <div class="brand">POWERPUFF DESIGNERS DASHBOARD</div>
     <div class="toolbar">
       <span id="saveind" class="saveind">● connecting…</span>
     </div>
@@ -96,17 +96,6 @@ textarea{ flex:1; min-width:280px; min-height:80px; border:1px solid #d5d9e0; bo
   </div>
   </div><!--/stickytop-->
 
-  <div class="legend">
-    <span><i class="dot" style="background:#cbd2db"></i>Not started</span>
-    <span><i class="dot" style="background:#3b82f6"></i>Designing</span>
-    <span><i class="dot" style="background:#14b8a6"></i>Producing samples</span>
-    <span><i class="dot" style="background:#8b5cf6"></i>Needs review (Hamid)</span>
-    <span><i class="dot" style="background:#22c55e"></i>Approved</span>
-    <span><i class="dot" style="background:#ef4444"></i>In production</span>
-    <span><i class="dot" style="background:#f97316"></i>Stuck</span>
-    <span><i class="dot" style="background:#eab308"></i>Paused</span>
-    <span class="muted">· click a part pill to set its status / rename / delete · ＋ to add a part · click a card title for details</span>
-  </div>
 
   <!-- PACKAGING -->
   <div id="packaging" class="pane">
@@ -2550,17 +2539,6 @@ function taskCard(t){ const link=t.link?`<span class="linktag">${esc(t.link)}</s
     <div class="descblock">${desc}</div>
     <div class="checkblock">${chk}</div></div>`; }
 
-/* ---------- next ---------- */
-function rippleHints(){ const out=[]; DB.products.forEach(p=>{ if(p.items.length && p.items.every(i=>i.status==="approved")) out.push(`“${p.name}” is fully approved — move parts to In production?`); }); return out; }
-function nextContent(){ const urgent=[],stuck=[],paused=[],review=[],factory=[],hamid=[];
-  DB.tasks.forEach(t=>{ if(t.urgent&&t.status!=="approved"&&t.status!=="in-production")urgent.push(t.title); });
-  const scan=(name,items,suf)=>items.forEach(i=>{ if(i.status==="stuck")stuck.push(`${name}${suf} — ${i.label}`); if(i.status==="paused")paused.push(`${name}${suf} — ${i.label}`); if(i.status==="needs-review")review.push(`${name}${suf} — ${i.label}`); });
-  DB.products.forEach(p=>scan(p.name,p.items,"")); DB.web.forEach(w=>scan(w.name,w.items," (web)"));
-  DB.tasks.forEach(t=>{ if(t.owner==="factory"&&t.status!=="approved"&&t.status!=="in-production")factory.push(t.title); if(t.owner==="hamid"&&t.status!=="approved"&&t.status!=="in-production")hamid.push(t.title); if(t.status==="stuck")stuck.push("Task: "+t.title); if(t.status==="paused")paused.push("Task: "+t.title); });
-  const grp=(title,arr,empty)=>`<div class="next-grp"><h3>${title} <span class="muted">(${arr.length})</span></h3>`+(arr.length?[...new Set(arr)].map(x=>`<div class="next-item">${esc(x)}</div>`).join(""):`<div class="next-item muted">${empty}</div>`)+`</div>`;
-  const hints=rippleHints(); const hintHtml=hints.length?`<div class="next-grp"><h3>🔗 Ripple checks <span class="muted">(${hints.length})</span></h3>`+hints.map(h=>`<div class="next-item" style="border-color:#c7b3f0">${esc(h)}</div>`).join("")+`</div>`:"";
-  return grp("🔥 Urgent",urgent,"Nothing marked urgent.")+grp("🟠 Stuck — blocked, need something to proceed",stuck,"Nothing stuck.")+hintHtml+grp("⏸️ Paused",paused,"Nothing paused.")+grp("🏭 Confirm with factories",factory,"Nothing waiting on factories.")+grp("👤 Waiting on Hamid",hamid,"Nothing waiting on Hamid.")+grp("🟣 Needs review",review,"Nothing in review."); }
-
 /* ---------- render ---------- */
 function collHeader(key,label,right){ const c=isCollapsed(key); return `<div class="sechdr" onclick="toggleCollapse('${key}')"><span class="caret">${c?'▸':'▾'}</span><span class="seclabel">${label}</span>${right||''}</div>`; }
 function renderFilterbar(){ const chipBtn=(k,label)=>`<button class="fchip ${filters[k]?'on':''}" onclick="toggleFilter('${k}')">${filters[k]?'☑':'☐'} Hide ${label}</button>`;
@@ -2569,8 +2547,9 @@ function renderFilterbar(){ const chipBtn=(k,label)=>`<button class="fchip ${fil
 function renderPackaging(){ const byF={}; Object.entries(DB.lines).forEach(([lid,l])=>{ (byF[l.factory]=byF[l.factory]||[]).push(lid); }); let h="";
   for(const fac of Object.keys(byF)){ h+=collHeader('pkg:'+fac,fac,''); if(!isCollapsed('pkg:'+fac)){ h+='<div class="secbody">';
     for(const lid of byF[fac]){ const all=DB.products.filter(p=>p.line===lid); const prods=all.filter(p=>visible(statusOf(p)));
-      h+=`<div class="linehdr2">${DB.lines[lid].label} <span class="muted">(${prods.length}/${all.length})</span><button class="addbtn" onclick="addProduct('${lid}',event)">＋ product</button></div>`;
-      h+=`<div class="grid linewrap" data-line="${lid}" ondragover="if(drag&&drag.kind==='product'){event.preventDefault();this.classList.add('dragover')}" ondragleave="this.classList.remove('dragover')" ondrop="this.classList.remove('dragover');if(drag&&drag.kind==='product')moveProduct(drag.id,'${lid}')">${prods.map(prodCard).join("")||'<div class="muted" style="font-size:12px">None shown.</div>'}</div>`; } h+='</div>'; } }
+      const key='pkg:'+fac+':'+lid;
+      h+=collHeader(key,`${DB.lines[lid].label} <span class="muted">(${prods.length}/${all.length})</span>`,`<button class="addbtn" onclick="addProduct('${lid}',event)">＋ product</button>`);
+      if(!isCollapsed(key)) h+=`<div class="grid linewrap" data-line="${lid}" ondragover="if(drag&&drag.kind==='product'){event.preventDefault();this.classList.add('dragover')}" ondragleave="this.classList.remove('dragover')" ondrop="this.classList.remove('dragover');if(drag&&drag.kind==='product')moveProduct(drag.id,'${lid}')">${prods.map(prodCard).join("")||'<div class="muted" style="font-size:12px">None shown.</div>'}</div>`; } h+='</div>'; } }
   document.getElementById('pkgbody').innerHTML=h; }
 function lineOfPdp(w){ const pid=(w.id&&w.id.indexOf('pdp-')===0)?w.id.slice(4):null; const p=pid&&DB.products.find(x=>x.id===pid); return p?p.line:null; }
 function renderWeb(){ const PDP_GROUPS=[["Hair Line",["hair"]],["Eyelash/Eyebrow",["eyebrow-eyelash"]],["Supplement Line",["supplements"]],["Perfumes + Fragrances",["perfume","arousal"]]];
@@ -2599,9 +2578,6 @@ function render(){ ensure(); renderFilterbar(); renderPackaging(); renderWeb(); 
 
 /* ---------- nav / tools ---------- */
 function setTab(t){ tab=t; document.querySelectorAll('.tab').forEach(e=>e.classList.toggle('active',e.dataset.tab===t)); document.querySelectorAll('.pane').forEach(p=>p.classList.add('hidden')); document.getElementById(t).classList.remove('hidden'); }
-function exportJSON(){ const t=JSON.stringify(DB,null,2); try{navigator.clipboard.writeText(t);}catch(e){} modalMsg("Board JSON copied to clipboard."); }
-function resetSeed(){ confirmBox("Reset board to seeded state? This overwrites board.json.",()=>{ DB=structuredClone(SEED); ensure(); save(); render(); }); }
-function planDay(){ tell("Look at the current FORCHICS Board and give me a prioritized plan for today: urgent first, then what unblocks the most, what's waiting on Hamid, what to confirm with the factories. Keep it tight."); }
 
 /* ---------- modals ---------- */
 function askText(label,def,cb){ const ov=document.createElement('div'); ov.className='overlay'; ov.innerHTML=`<div class="modal"><div class="mlab">${esc(label)}</div><input id="mInput" value="${esc(def)}" autocomplete="off"/><div class="mrow"><button class="btn" id="mCancel">Cancel</button><button class="btn primary" id="mOk">Save</button></div></div>`; document.body.appendChild(ov); const inp=ov.querySelector('#mInput'); inp.focus(); const close=()=>ov.remove(); ov.querySelector('#mCancel').onclick=close; ov.querySelector('#mOk').onclick=()=>{const v=inp.value.trim();close();if(v)cb(v);}; inp.onkeydown=e=>{if(e.key==='Enter')ov.querySelector('#mOk').click();if(e.key==='Escape')close();}; }
