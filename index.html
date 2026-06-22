@@ -2315,11 +2315,11 @@ const SEED = {
   "inbox": [],
   "ideas": []
 };
-const ORDER = ["not-started","designing","producing-samples","needs-review","approved","in-production","stuck","paused"];
-const LABELS = {"not-started":"Not started","designing":"Designing","producing-samples":"Producing samples","needs-review":"Needs review (Hamid)","approved":"Approved","in-production":"In production","stuck":"Stuck","paused":"Paused"};
+const ORDER = ["not-started","designing","producing-samples","needs-review","needs-input","approved","in-production","stuck","paused"];
+const LABELS = {"not-started":"Not started","designing":"Designing","producing-samples":"Waiting on samples","needs-review":"Needs review","needs-input":"Needs input","approved":"Approved","in-production":"In production","stuck":"Stuck","paused":"Paused"};
 const STAGE = {"not-started":0,"designing":1,"producing-samples":2,"needs-review":3,"approved":4,"in-production":5};
-const SORT_PRI = {"stuck":0,"paused":1,"needs-review":2,"designing":3,"producing-samples":4,"not-started":5,"approved":6,"in-production":7};
-const WORK_PRI = {"designing":0,"producing-samples":1,"needs-review":2,"stuck":3,"not-started":4,"approved":5,"in-production":6,"paused":7};
+const SORT_PRI = {"stuck":0,"needs-review":1,"needs-input":2,"producing-samples":3,"designing":4,"not-started":5,"paused":6,"approved":7,"in-production":8};
+const WORK_PRI = {"designing":0,"producing-samples":1,"needs-review":2,"needs-input":3,"stuck":4,"not-started":5,"approved":6,"in-production":7,"paused":8};
 const TYPES = ["packaging","website","ops"];
 const TYPE_LABEL = {packaging:"Packaging",website:"Website",ops:"Ops"};
 const LANES = ["we","hamid","factory","ideas"];
@@ -2395,7 +2395,13 @@ async function boot(){
 sb.auth.onAuthStateChange((ev)=>{ if(ev==='SIGNED_IN' && !CURRENT_USER) boot(); });
 
 /* ---------- helpers ---------- */
-function rollup(items){ const v=(items||[]).map(i=>i.status); if(!v.length)return "not-started"; if(v.includes("stuck"))return "stuck"; if(v.includes("paused"))return "paused"; let best="not-started",bs=99; v.forEach(s=>{ const st=STAGE[s]; if(st!=null&&st<bs){bs=st;best=s;} }); return best; }
+function rollup(items){ const v=(items||[]).map(i=>i.status); if(!v.length)return "not-started";
+  if(v.every(s=>s==="approved"||s==="in-production")) return v.every(s=>s==="in-production")?"in-production":"approved";
+  if(v.includes("stuck")) return "stuck";
+  if(v.some(s=>s==="needs-review"||s==="needs-input")) return "needs-review";
+  if(v.includes("producing-samples")) return "producing-samples";
+  if(v.includes("designing")) return "designing";
+  return "not-started"; }
 function slugify(s){ return s.toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,48)||('item-'+Date.now().toString(36)); }
 function uniqueId(base,exists){ let id=base,n=2; while(exists(id)){ id=base+'-'+n; n++; } return id; }
 function esc(s){ return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -2641,8 +2647,8 @@ function injectStyles(){ const css=`
   .stickytop{ position:sticky; top:0; z-index:50; background:#f6f7f9; padding:12px 0 8px; margin-top:-18px; box-shadow:0 8px 10px -9px rgba(20,30,50,.22); }
   .saveind{ font-size:11.5px; font-weight:700; align-self:center; color:#9aa1ad; } .saveind.ok{ color:#15803d; } .saveind.saving{ color:#1d4ed8; } .saveind.err{ color:#dc2626; } .saveind.warn{ color:#b45309; }
   .sel{ border:none; border-radius:7px; padding:5px 6px; font-size:11px; font-weight:700; cursor:pointer; width:100%; -webkit-appearance:none; appearance:none; }
-  .s-not-started{ background:#eef0f2; color:#6b7280; } .s-designing{ background:#dbeafe; color:#1d4ed8; } .s-producing-samples{ background:#cffafe; color:#0e7490; } .s-needs-review{ background:#ede9fe; color:#6d28d9; } .s-approved{ background:#dcfce7; color:#15803d; } .s-in-production{ background:#fee2e2; color:#b91c1c; } .s-stuck{ background:#ffedd5; color:#c2410c; } .s-paused{ background:#fef9c3; color:#854d0e; }
-  .bg-not-started{ background:#fcfcfd; } .bg-designing{ background:#eff5ff; } .bg-producing-samples{ background:#f0fdff; } .bg-needs-review{ background:#f6f2ff; } .bg-approved{ background:#eefbf1; } .bg-in-production{ background:#fef3f3; } .bg-stuck{ background:#fff7ed; } .bg-paused{ background:#fefce8; }
+  .s-not-started{ background:#eef0f2; color:#6b7280; } .s-designing{ background:#dbeafe; color:#1d4ed8; } .s-producing-samples{ background:#fef9c3; color:#854d0e; } .s-needs-review{ background:#ede9fe; color:#6d28d9; } .s-needs-input{ background:#ede9fe; color:#6d28d9; } .s-approved{ background:#dcfce7; color:#15803d; } .s-in-production{ background:#86efac; color:#14532d; } .s-stuck{ background:#ffedd5; color:#c2410c; } .s-paused{ background:#eef0f2; color:#6b7280; }
+  .bg-not-started{ background:#fcfcfd; } .bg-designing{ background:#eff5ff; } .bg-producing-samples{ background:#fefce8; } .bg-needs-review{ background:#f6f2ff; } .bg-needs-input{ background:#f6f2ff; } .bg-approved{ background:#eefbf1; } .bg-in-production{ background:#d6f8e3; } .bg-stuck{ background:#fff7ed; } .bg-paused{ background:#f6f7f9; }
   .chiprow{ display:flex; align-items:center; gap:6px; margin:0 0 8px; } .chip{ display:inline-block; font-size:10px; font-weight:700; padding:3px 9px; border-radius:20px; letter-spacing:.3px; } .chipbtn{ border:none; cursor:pointer; } .chipbtn:hover{ filter:brightness(.95); } .chipbtn.manual{ box-shadow:0 0 0 1.5px #94a3b8 inset; } .chiprow .topbtns{ margin-left:auto; }
   .cardtop{ display:flex; align-items:flex-start; justify-content:space-between; gap:6px; } .cardtop p{ margin:0; } .topbtns{ display:flex; gap:2px; flex:none; align-items:center; }
   .xbadge{ display:inline-flex; align-items:center; gap:3px; border:1px solid #e6e9ee; background:#fff; border-radius:7px; padding:3px 6px; font-size:12px; line-height:1; cursor:pointer; } .xbadge:hover{ background:#f6f8fa; } .xbadge.none{ opacity:.5; } .xbadge .pdot{ width:9px; height:9px; } .xbadge .pcaret{ font-size:10px; opacity:.6; } .linkish{ background:none; border:none; color:#2563eb; cursor:pointer; font:inherit; font-size:12px; padding:0; text-decoration:underline; }
