@@ -24,6 +24,11 @@ h1,h2,h3{ margin:0; font-weight:650; letter-spacing:.2px; }
 .tabs{ display:flex; gap:4px; border-bottom:1px solid #e3e6ea; margin-bottom:16px; flex-wrap:wrap; }
 .tab{ padding:9px 14px; cursor:pointer; border:none; background:none; font-size:14px; color:#6b7280; font-weight:600; border-bottom:2px solid transparent; }
 .tab.active{ color:#1f2430; border-bottom-color:#1f2430; }
+#topTabs{ margin-bottom:8px; }
+.subtabs{ display:flex; gap:6px; margin:0 0 16px; flex-wrap:wrap; }
+.subtab{ padding:6px 12px; cursor:pointer; border:1px solid #e3e6ea; background:#fff; border-radius:8px; font-size:13px; color:#6b7280; font-weight:600; }
+.subtab.active{ color:#1f2430; border-color:#9aa3b2; background:#f3f5f8; }
+.addline{ margin:0 0 12px; }
 .subtoggle{ display:flex; gap:6px; margin-bottom:14px; }
 .subtoggle .btn.on{ background:#1f2430; color:#fff; border-color:#1f2430; }
 .section-title{ font-size:12px; text-transform:uppercase; letter-spacing:1.2px; color:#8a92a3; margin:22px 0 10px; font-weight:700; display:flex; align-items:center; gap:8px;}
@@ -89,11 +94,8 @@ textarea{ flex:1; min-width:280px; min-height:80px; border:1px solid #d5d9e0; bo
     </div>
   </div>
 
-  <div class="tabs">
-    <button class="tab active" data-tab="packaging" onclick="setTab('packaging')">📦 Packaging</button>
-    <button class="tab" data-tab="web" onclick="setTab('web')">🌐 Web roadmap</button>
-    <button class="tab" data-tab="daily" onclick="setTab('daily')">👥 By owner</button>
-  </div>
+  <div class="tabs" id="topTabs"></div>
+  <div class="subtabs" id="subTabs"></div>
   </div><!--/stickytop-->
 
   <!-- PACKAGING -->
@@ -2323,7 +2325,7 @@ const TYPE_LABEL = {packaging:"Packaging",website:"Website",ops:"Ops"};
 const LANES = ["we","hamid","factory","ideas"];
 const OWNER_LANE = {we:"lane-we",hamid:"lane-hamid",factory:"lane-factory",ideas:"lane-ideas"};
 const CKEY="forchics_collapsed_v1", FKEY="forchics_filters_v1";
-let DB, drag=null, collapsed=new Set(), filters={}, sortMode="working", tab="packaging";
+let DB, drag=null, collapsed=new Set(), filters={}, sortMode="working", tab="packaging", brandTab="forchics";
 let dirHandle=null, boardHandle=null, lastMod=0, saveTimer=null, saving=false, suppressUntil=0, pollId=null;
 
 /* ---------- Supabase persistence (instant + live + multi-user) ---------- */
@@ -2357,7 +2359,7 @@ function connectSSE(){   // live updates: Supabase pushes when anyone (you, a te
 async function loadSpec(id,el){ el.textContent='Spec view isn’t wired into the local build yet — ask me in chat to check products/'+id+'.md.'; }
 function tell(t){ try{navigator.clipboard.writeText(t);}catch(e){} modalMsg('Copied — paste this into your Claude chat:\n\n'+t); }
 function logChange(){}
-function loadPrefs(){ try{ const c=localStorage.getItem(CKEY); collapsed=new Set(c?JSON.parse(c):["web:pdp"]); }catch(e){ collapsed=new Set(["web:pdp"]); } try{ filters=JSON.parse(localStorage.getItem(FKEY))||{}; }catch(e){ filters={}; } }
+function loadPrefs(){ try{ const c=localStorage.getItem(CKEY); collapsed=new Set(c?JSON.parse(c):[]); }catch(e){ collapsed=new Set(); } try{ filters=JSON.parse(localStorage.getItem(FKEY))||{}; }catch(e){ filters={}; } }
 function saveCollapsed(){ try{ localStorage.setItem(CKEY, JSON.stringify([...collapsed])); }catch(e){} }
 function saveFilters(){ try{ localStorage.setItem(FKEY, JSON.stringify(filters)); }catch(e){} }
 async function signIn(email){
@@ -2406,7 +2408,11 @@ function ensure(){ DB.inbox=DB.inbox||[]; DB.ideas=DB.ideas||[];
   DB.pages=DB.pages||[];
   DB.products.forEach(p=>{ p.packaging=p.packaging||[]; p.web=p.web||[]; });
   DB.pages.forEach(g=>{ g.items=g.items||[]; });
-  DB.tasks.forEach(t=>{ if(!t.type)t.type='ops'; if(t.urgent===undefined)t.urgent=false; }); }
+  DB.tasks.forEach(t=>{ if(!t.type)t.type='ops'; if(t.urgent===undefined)t.urgent=false; });
+  DB.brands=(Array.isArray(DB.brands)&&DB.brands.length)?DB.brands:[{id:'forchics',label:'FORCHICS'},{id:'quia',label:'QUIA'}];
+  DB.lines=DB.lines||{}; Object.keys(DB.lines).forEach(k=>{ if(!DB.lines[k].brand)DB.lines[k].brand='forchics'; });
+  DB.products.forEach(p=>{ if(!p.brand)p.brand='forchics'; });
+  DB.pages.forEach(g=>{ if(!g.brand)g.brand='forchics'; }); }
 function _res(scope,id){ if(scope==='page'){ const g=DB.pages.find(x=>x.id===id); return g?{o:g,arr:'items',ovf:'override'}:null; } const p=DB.products.find(x=>x.id===id); if(!p)return null; return scope==='web'?{o:p,arr:'web',ovf:'webOverride'}:{o:p,arr:'packaging',ovf:'override'}; }
 function pkgStatus(p){ return p.override||rollup(p.packaging); }
 function webStatus(p){ return p.webOverride||rollup(p.web); }
@@ -2417,7 +2423,7 @@ function statusOf(o){ return o.override||rollup(o.items); }
 function chip(ro){ return `<span class="chip s-${ro}">${LABELS[ro]}</span>`; }
 function isCollapsed(k){ return collapsed.has(k); }
 function toggleCollapse(k){ collapsed.has(k)?collapsed.delete(k):collapsed.add(k); saveCollapsed(); render(); }
-function collapseAll(){ collapsed=new Set(["pkg:BIYING","pkg:ADICO","web:pdp","web:pages"]); saveCollapsed(); render(); }
+function collapseAll(){ const blab=(DB.brands.find(b=>b.id===brandTab)||{}).label||brandTab; const ks=new Set(['web:'+brandTab+':pdp','web:'+brandTab+':pages']); Object.entries(DB.lines).forEach(([lid,l])=>{ if((l.brand||'forchics')===brandTab) ks.add('pkg:'+brandTab+':'+(l.factory||blab)); }); collapsed=ks; saveCollapsed(); render(); }
 function expandAll(){ collapsed=new Set(); saveCollapsed(); render(); }
 function toggleFilter(k){ filters[k]=!filters[k]; saveFilters(); render(); }
 function visible(ro){ return !filters[ro]; }
@@ -2453,13 +2459,14 @@ function overallChip(scope,id){ const ro=scopeStatus(scope,id); const r=_res(sco
 function setProdNotes(id,val){ const p=DB.products.find(x=>x.id===id); if(!p||(p.notes||'')===val)return; p.notes=val; save(); render(); }
 function setProdLinks(id,val){ const p=DB.products.find(x=>x.id===id); if(p){ p.links=val; save(); } }
 function editProdNotes(id){ const p=DB.products.find(x=>x.id===id); askTextarea(`Note — ${p.name}`, p.notes||"", v=>setProdNotes(id,v)); }
-function addProduct(lineId,ev){ if(ev)ev.stopPropagation(); askText("New product name","",name=>{ const id=uniqueId(slugify(name),x=>DB.products.some(p=>p.id===x)); DB.products.push({id,name,line:lineId,active:true,packaging:[{label:"Bottle",status:"not-started"},{label:"Box",status:"not-started"},{label:"Manual",status:"not-started"},{label:"Amazon barcode",status:"not-started"}],web:[],notes:""}); save(); render(); }); }
+function addProduct(lineId,ev){ if(ev)ev.stopPropagation(); askText("New product name","",name=>{ const id=uniqueId(slugify(name),x=>DB.products.some(p=>p.id===x)); const ln=DB.lines[lineId]; DB.products.push({id,name,line:lineId,brand:(ln&&ln.brand)||'forchics',active:true,packaging:[{label:"Bottle",status:"not-started"},{label:"Box",status:"not-started"},{label:"Manual",status:"not-started"},{label:"Amazon barcode",status:"not-started"}],web:[],notes:""}); save(); render(); }); }
+function addLine(brand){ askText("New line / category name","",name=>{ const id=uniqueId(slugify(name),x=>!!DB.lines[x]); DB.lines[id]={label:name,factory:'',brand:brand||'forchics'}; save(); render(); }); }
 function moveProduct(id,lineId){ const p=DB.products.find(x=>x.id===id); if(!p||p.line===lineId)return; p.line=lineId; save(); render(); }
 function delProduct(id){ const p=DB.products.find(x=>x.id===id); confirmBox(`Delete "${p.name}"? (removes it from Packaging and Website)`,()=>{ DB.products=DB.products.filter(x=>x.id!==id); save(); render(); }); }
 function addPdp(id){ const p=DB.products.find(x=>x.id===id); if(!p||(p.web||[]).length)return; p.web=["Assets","Layout","Carousel","Offer","Copy"].map(l=>({label:l,status:"not-started"})); save(); render(); }
 function setPageNotes(id,val){ const g=DB.pages.find(x=>x.id===id); if(!g||(g.notes||'')===val)return; g.notes=val; save(); render(); }
 function editPageNotes(id){ const g=DB.pages.find(x=>x.id===id); askTextarea(`Note — ${g.name}`, g.notes||"", v=>setPageNotes(id,v)); }
-function addPage(ev){ if(ev)ev.stopPropagation(); askText("New page name","",name=>{ const id=uniqueId(slugify(name),x=>DB.pages.some(g=>g.id===x)); DB.pages.push({id,name,items:["Assets","Layout","Copy"].map(l=>({label:l,status:"not-started"})),notes:""}); save(); render(); }); }
+function addPage(brand,ev){ if(ev)ev.stopPropagation(); askText("New page name","",name=>{ const id=uniqueId(slugify(name),x=>DB.pages.some(g=>g.id===x)); DB.pages.push({id,name,brand:brand||'forchics',items:["Assets","Layout","Copy"].map(l=>({label:l,status:"not-started"})),notes:""}); save(); render(); }); }
 function delPage(id){ const g=DB.pages.find(x=>x.id===id); confirmBox(`Delete "${g.name}"?`,()=>{ DB.pages=DB.pages.filter(x=>x.id!==id); save(); render(); }); }
 
 /* ---------- tasks ---------- */
@@ -2569,29 +2576,32 @@ function collHeader(key,label,right){ const c=isCollapsed(key); return `<div cla
 function renderFilterbar(){ const chipBtn=(k,label)=>`<button class="fchip ${filters[k]?'on':''}" onclick="toggleFilter('${k}')">${filters[k]?'☑':'☐'} Hide ${label}</button>`;
   const html=`<span class="fblab">Focus:</span>${chipBtn('approved','Approved')}${chipBtn('in-production','In production')}${chipBtn('paused','Paused')}<span style="flex:1"></span><button class="fchip" onclick="collapseAll()">Collapse all</button><button class="fchip" onclick="expandAll()">Expand all</button>`;
   ['fb-pkg','fb-web'].forEach(id=>{ const fb=document.getElementById(id); if(fb) fb.innerHTML=html; }); }
-function renderPackaging(){ const byF={}; Object.entries(DB.lines).forEach(([lid,l])=>{ (byF[l.factory]=byF[l.factory]||[]).push(lid); }); let h="";
-  for(const fac of Object.keys(byF)){ h+=collHeader('pkg:'+fac,fac,''); if(!isCollapsed('pkg:'+fac)){ h+='<div class="secbody">';
+function renderPackaging(){ const blab=(DB.brands.find(b=>b.id===brandTab)||{}).label||brandTab;
+  const byF={}; Object.entries(DB.lines).forEach(([lid,l])=>{ if((l.brand||'forchics')!==brandTab)return; const fk=l.factory||blab; (byF[fk]=byF[fk]||[]).push(lid); });
+  let h=`<div class="addline"><button class="addbtn" onclick="addLine('${brandTab}')">＋ add line</button></div>`;
+  for(const fac of Object.keys(byF)){ const fk='pkg:'+brandTab+':'+fac; h+=collHeader(fk,fac,''); if(!isCollapsed(fk)){ h+='<div class="secbody">';
     for(const lid of byF[fac]){ const all=DB.products.filter(p=>p.line===lid); const prods=all.filter(p=>visible(pkgStatus(p)));
-      const key='pkg:'+fac+':'+lid;
+      const key='pkg:'+brandTab+':'+lid;
       h+=collHeader(key,`${DB.lines[lid].label} <span class="muted">(${prods.length}/${all.length})</span>`,`<button class="addbtn" onclick="addProduct('${lid}',event)">＋ product</button>`);
       if(!isCollapsed(key)) h+=`<div class="grid linewrap" data-line="${lid}" ondragover="if(drag&&drag.kind==='product'){event.preventDefault();this.classList.add('dragover')}" ondragleave="this.classList.remove('dragover')" ondrop="this.classList.remove('dragover');if(drag&&drag.kind==='product')moveProduct(drag.id,'${lid}')">${prods.map(prodCard).join("")||'<div class="muted" style="font-size:12px">None shown.</div>'}</div>`; } h+='</div>'; } }
+  if(!Object.keys(byF).length) h+=`<div class="muted" style="font-size:12.5px;padding:10px 2px">No lines yet — use “＋ add line” to start.</div>`;
   document.getElementById('pkgbody').innerHTML=h; }
-function renderWeb(){ const PDP_GROUPS=[["Hair Line",["hair"]],["Eyelash/Eyebrow",["eyebrow-eyelash"]],["Supplement Line",["supplements"]],["Perfumes + Fragrances",["perfume","arousal"]]];
-  let h=collHeader('web:pdp',`Product pages (PDPs) — by line`,'');
-  if(!isCollapsed('web:pdp')){
-    h+='<div class="secbody">'; const used=new Set();
-    for(const [label,lines] of PDP_GROUPS){
-      const all=DB.products.filter(p=>lines.includes(p.line)); all.forEach(p=>used.add(p.id));
-      const shown=all.filter(p=>visible(webStatus(p))); const key='web:pdp:'+label.replace(/[^a-z]/gi,'').toLowerCase();
-      h+=collHeader(key,`${label} <span class="muted">(${shown.length}/${all.length})</span>`,'');
+function renderWeb(){
+  const lines=Object.entries(DB.lines).filter(([lid,l])=>(l.brand||'forchics')===brandTab);
+  let h=collHeader('web:'+brandTab+':pdp',`Product pages (PDPs) — by line`,'');
+  if(!isCollapsed('web:'+brandTab+':pdp')){
+    h+='<div class="secbody">'; let any=false;
+    for(const [lid,l] of lines){ const all=DB.products.filter(p=>p.line===lid); if(!all.length)continue; any=true;
+      const shown=all.filter(p=>visible(webStatus(p))); const key='web:'+brandTab+':'+lid;
+      h+=collHeader(key,`${l.label} <span class="muted">(${shown.length}/${all.length})</span>`,'');
       if(!isCollapsed(key)) h+=`<div class="grid">${shown.map(webCard).join("")||'<div class="muted" style="font-size:12px">None shown.</div>'}</div>`;
     }
-    const other=DB.products.filter(p=>!used.has(p.id));
-    if(other.length){ const shown=other.filter(p=>visible(webStatus(p))); h+=collHeader('web:pdp:other',`Other <span class="muted">(${shown.length}/${other.length})</span>`,''); if(!isCollapsed('web:pdp:other')) h+=`<div class="grid">${shown.map(webCard).join("")}</div>`; }
+    if(!any) h+=`<div class="muted" style="font-size:12px;padding:6px 2px">No products yet.</div>`;
     h+='</div>';
   }
-  h+=collHeader('web:pages',`Pages <span class="muted">(${DB.pages.filter(g=>visible(pageStatus(g))).length}/${DB.pages.length})</span>`,`<button class="addbtn" onclick="addPage(event)">＋ page</button>`);
-  if(!isCollapsed('web:pages')) h+=`<div class="grid">${DB.pages.filter(g=>visible(pageStatus(g))).map(pageCard).join("")||'<div class="muted" style="font-size:12px">None shown.</div>'}</div>`;
+  const pages=DB.pages.filter(g=>(g.brand||'forchics')===brandTab);
+  h+=collHeader('web:'+brandTab+':pages',`Pages <span class="muted">(${pages.filter(g=>visible(pageStatus(g))).length}/${pages.length})</span>`,`<button class="addbtn" onclick="addPage('${brandTab}',event)">＋ page</button>`);
+  if(!isCollapsed('web:'+brandTab+':pages')) h+=`<div class="grid">${pages.filter(g=>visible(pageStatus(g))).map(pageCard).join("")||'<div class="muted" style="font-size:12px">None shown.</div>'}</div>`;
   document.getElementById('webbody').innerHTML=h; }
 function ownerLabel(o){ return o==='we'?'Design team':o==='factory'?'Factory':o==='hamid'?'Hamid':o==='ideas'?'Idea':o; }
 function autoItemsFor(owner){ const map={we:['not-started','designing'],factory:['producing-samples'],hamid:['needs-review']}; const want=map[owner]; if(!want)return []; const out=[];
@@ -2611,10 +2621,14 @@ function renderTodayStrip(){ const el=document.getElementById('todaystrip'); if(
     return `<div class="tsmini"><button class="tsm-x" title="Remove from today" onclick="setToday('${t.id}',false)">✕</button><div class="tsm-cat">${esc(ownerLabel(t.owner))}</div><div class="tsm-title ${t.done?'doneT':''}">${esc(t.title)}</div>${pct!=null?`<div class="tsm-meta"><div class="tsm-bar"><span style="width:${pct}%"></span></div><span class="tsm-pct">${pct}%</span></div>`:''}</div>`; };
   el.innerHTML=`<div class="tshead">🔥 In progress — today <span class="muted" style="font-weight:400">· ${today.length}</span></div><div class="tsrow">${today.map(card).join("")}<div class="tsdrop">drag a task here</div></div>`;
   el.ondragover=e=>{ if(drag&&drag.kind==='task'){ e.preventDefault(); el.classList.add('dragover'); } }; el.ondragleave=()=>el.classList.remove('dragover'); el.ondrop=e=>{ el.classList.remove('dragover'); if(drag&&drag.kind==='task') setToday(drag.id,true); }; }
-function render(){ ensure(); renderFilterbar(); renderPackaging(); renderWeb(); renderDaily(); renderTodayStrip(); }
+function render(){ ensure(); renderTabs(); renderFilterbar(); renderPackaging(); renderWeb(); renderDaily(); renderTodayStrip(); }
 
 /* ---------- nav / tools ---------- */
-function setTab(t){ tab=t; document.querySelectorAll('.tab').forEach(e=>e.classList.toggle('active',e.dataset.tab===t)); document.querySelectorAll('.pane').forEach(p=>p.classList.add('hidden')); document.getElementById(t).classList.remove('hidden'); }
+function applyPanes(){ document.querySelectorAll('.pane').forEach(p=>p.classList.add('hidden')); const pane=document.getElementById(tab); if(pane)pane.classList.remove('hidden'); }
+function setTab(t){ tab=t; applyPanes(); renderTabs(); }
+function setBrand(b){ brandTab=b; if(tab==='daily')tab='packaging'; applyPanes(); render(); }
+function renderTabs(){ const top=document.getElementById('topTabs'); if(top){ top.innerHTML=(DB.brands||[]).map(b=>`<button class="tab ${tab!=='daily'&&brandTab===b.id?'active':''}" onclick="setBrand('${b.id}')">${esc(b.label)}</button>`).join('')+`<button class="tab ${tab==='daily'?'active':''}" onclick="setTab('daily')">👥 Daily</button>`; }
+  const sub=document.getElementById('subTabs'); if(sub){ if(tab==='daily'){ sub.style.display='none'; sub.innerHTML=''; } else { sub.style.display=''; sub.innerHTML=`<button class="subtab ${tab==='packaging'?'active':''}" onclick="setTab('packaging')">📦 Packaging</button><button class="subtab ${tab==='web'?'active':''}" onclick="setTab('web')">🌐 Web</button>`; } } }
 
 /* ---------- modals ---------- */
 function askText(label,def,cb){ const ov=document.createElement('div'); ov.className='overlay'; ov.innerHTML=`<div class="modal"><div class="mlab">${esc(label)}</div><input id="mInput" value="${esc(def)}" autocomplete="off"/><div class="mrow"><button class="btn" id="mCancel">Cancel</button><button class="btn primary" id="mOk">Save</button></div></div>`; document.body.appendChild(ov); const inp=ov.querySelector('#mInput'); inp.focus(); const close=()=>ov.remove(); ov.querySelector('#mCancel').onclick=close; ov.querySelector('#mOk').onclick=()=>{const v=inp.value.trim();close();if(v)cb(v);}; inp.onkeydown=e=>{if(e.key==='Enter')ov.querySelector('#mOk').click();if(e.key==='Escape')close();}; }
