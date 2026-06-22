@@ -2578,35 +2578,38 @@ function taskCard(t){
     <div class="checkblock">${chk}</div></div>`; }
 
 /* ---------- render ---------- */
-function collHeader(key,label,right){ const c=isCollapsed(key); return `<div class="sechdr" onclick="toggleCollapse('${key}')"><span class="caret">${c?'▸':'▾'}</span><span class="seclabel">${label}</span>${right||''}</div>`; }
+const STATUS_COLOR={"not-started":"grey","paused":"grey","designing":"blue","producing-samples":"yellow","needs-review":"violet","needs-input":"violet","approved":"green","in-production":"green","stuck":"orange"};
+function statusBar(statuses){ if(!statuses||!statuses.length)return ''; const order=["green","blue","yellow","violet","orange","grey"]; const hex={green:"#22c55e",blue:"#3b82f6",yellow:"#eab308",violet:"#8b5cf6",orange:"#f97316",grey:"#cbd2db"}; const lab={green:"done",blue:"designing",yellow:"samples",violet:"with Hamid",orange:"stuck",grey:"not started"}; const cnt={}; statuses.forEach(s=>{ const c=STATUS_COLOR[s]||"grey"; cnt[c]=(cnt[c]||0)+1; }); const total=statuses.length; const segs=order.filter(c=>cnt[c]).map(c=>`<span class="sbseg" style="width:${(cnt[c]/total*100).toFixed(2)}%;background:${hex[c]}" title="${cnt[c]} ${lab[c]}"></span>`).join(''); return `<span class="statusbar" title="${total} card${total>1?'s':''}">${segs}</span>`; }
+function collHeader(key,label,right,bar){ const c=isCollapsed(key); return `<div class="sechdr" onclick="toggleCollapse('${key}')"><span class="caret">${c?'▸':'▾'}</span><span class="seclabel">${label}</span><span style="flex:1"></span>${bar||''}${right||''}</div>`; }
 function renderFilterbar(){ const chipBtn=(k,label)=>`<button class="fchip ${filters[k]?'on':''}" onclick="toggleFilter('${k}')">${filters[k]?'☑':'☐'} Hide ${label}</button>`;
   const html=`<span class="fblab">Focus:</span>${chipBtn('approved','Approved')}${chipBtn('in-production','In production')}${chipBtn('paused','Paused')}<span style="flex:1"></span><button class="fchip" onclick="collapseAll()">Collapse all</button><button class="fchip" onclick="expandAll()">Expand all</button>`;
   ['fb-pkg','fb-web'].forEach(id=>{ const fb=document.getElementById(id); if(fb) fb.innerHTML=html; }); }
 function renderPackaging(){ const blab=(DB.brands.find(b=>b.id===brandTab)||{}).label||brandTab;
   const byF={}; Object.entries(DB.lines).forEach(([lid,l])=>{ if((l.brand||'forchics')!==brandTab)return; const fk=l.factory||blab; (byF[fk]=byF[fk]||[]).push(lid); });
   let h=`<div class="addline"><button class="addbtn" onclick="addLine('${brandTab}')">＋ add line</button></div>`;
-  for(const fac of Object.keys(byF)){ const fk='pkg:'+brandTab+':'+fac; h+=collHeader(fk,fac,''); if(!isCollapsed(fk)){ h+='<div class="secbody">';
+  for(const fac of Object.keys(byF)){ const fk='pkg:'+brandTab+':'+fac; const facProds=DB.products.filter(p=>byF[fac].includes(p.line)); h+=collHeader(fk,fac,'',statusBar(facProds.map(pkgStatus))); if(!isCollapsed(fk)){ h+='<div class="secbody">';
     for(const lid of byF[fac]){ const all=DB.products.filter(p=>p.line===lid); const prods=all.filter(p=>visible(pkgStatus(p)));
       const key='pkg:'+brandTab+':'+lid;
-      h+=collHeader(key,`${DB.lines[lid].label} <span class="muted">(${prods.length}/${all.length})</span>`,`<button class="addbtn" onclick="addProduct('${lid}',event)">＋ product</button>`);
+      h+=collHeader(key,`${DB.lines[lid].label} <span class="muted">(${prods.length}/${all.length})</span>`,`<button class="addbtn" onclick="addProduct('${lid}',event)">＋ product</button>`,statusBar(all.map(pkgStatus)));
       if(!isCollapsed(key)) h+=`<div class="grid linewrap" data-line="${lid}" ondragover="if(drag&&drag.kind==='product'){event.preventDefault();this.classList.add('dragover')}" ondragleave="this.classList.remove('dragover')" ondrop="this.classList.remove('dragover');if(drag&&drag.kind==='product')moveProduct(drag.id,'${lid}')">${prods.map(prodCard).join("")||'<div class="muted" style="font-size:12px">None shown.</div>'}</div>`; } h+='</div>'; } }
   if(!Object.keys(byF).length) h+=`<div class="muted" style="font-size:12.5px;padding:10px 2px">No lines yet — use “＋ add line” to start.</div>`;
   document.getElementById('pkgbody').innerHTML=h; }
 function renderWeb(){
   const lines=Object.entries(DB.lines).filter(([lid,l])=>(l.brand||'forchics')===brandTab);
-  let h=collHeader('web:'+brandTab+':pdp',`Product pages (PDPs) — by line`,'');
+  const brandLineIds=new Set(lines.map(([lid])=>lid)); const brandProds=DB.products.filter(p=>brandLineIds.has(p.line));
+  let h=collHeader('web:'+brandTab+':pdp',`Product pages (PDPs) — by line`,'',statusBar(brandProds.map(webStatus)));
   if(!isCollapsed('web:'+brandTab+':pdp')){
     h+='<div class="secbody">'; let any=false;
     for(const [lid,l] of lines){ const all=DB.products.filter(p=>p.line===lid); if(!all.length)continue; any=true;
       const shown=all.filter(p=>visible(webStatus(p))); const key='web:'+brandTab+':'+lid;
-      h+=collHeader(key,`${l.label} <span class="muted">(${shown.length}/${all.length})</span>`,'');
+      h+=collHeader(key,`${l.label} <span class="muted">(${shown.length}/${all.length})</span>`,'',statusBar(all.map(webStatus)));
       if(!isCollapsed(key)) h+=`<div class="grid">${shown.map(webCard).join("")||'<div class="muted" style="font-size:12px">None shown.</div>'}</div>`;
     }
     if(!any) h+=`<div class="muted" style="font-size:12px;padding:6px 2px">No products yet.</div>`;
     h+='</div>';
   }
   const pages=DB.pages.filter(g=>(g.brand||'forchics')===brandTab);
-  h+=collHeader('web:'+brandTab+':pages',`Pages <span class="muted">(${pages.filter(g=>visible(pageStatus(g))).length}/${pages.length})</span>`,`<button class="addbtn" onclick="addPage('${brandTab}',event)">＋ page</button>`);
+  h+=collHeader('web:'+brandTab+':pages',`Pages <span class="muted">(${pages.filter(g=>visible(pageStatus(g))).length}/${pages.length})</span>`,`<button class="addbtn" onclick="addPage('${brandTab}',event)">＋ page</button>`,statusBar(pages.map(pageStatus)));
   if(!isCollapsed('web:'+brandTab+':pages')) h+=`<div class="grid">${pages.filter(g=>visible(pageStatus(g))).map(pageCard).join("")||'<div class="muted" style="font-size:12px">None shown.</div>'}</div>`;
   document.getElementById('webbody').innerHTML=h; }
 function ownerLabel(o){ return o==='we'?'Design team':o==='factory'?'Factory':o==='hamid'?'Hamid':o==='ideas'?'Idea':o; }
@@ -2659,6 +2662,7 @@ function injectStyles(){ const css=`
   .subadd{ border:1px dashed #c7ccd6; background:#fff; color:#8a92a3; border-radius:8px; padding:5px 9px; font-size:11px; font-weight:700; cursor:pointer; } .subadd:hover{ background:#eef2ff; border-color:#9bb4f5; color:#1d4ed8; }
   .subinput{ border:1px solid #9bb4f5; border-radius:8px; padding:4px 8px; font:inherit; font-size:11px; width:130px; outline:none; }
   .sechdr{ display:flex; align-items:center; gap:8px; cursor:pointer; padding:9px 10px; margin:8px 0 4px; background:#eef0f3; border-radius:9px; font-weight:700; font-size:13px; color:#39404e; user-select:none; } .sechdr:hover{ background:#e6e9ef; } .sechdr .caret{ font-size:11px; color:#8a92a3; width:12px; }
+  .statusbar{ display:inline-flex; height:7px; width:110px; border-radius:4px; overflow:hidden; background:#e3e7ec; flex:none; } .sbseg{ height:100%; }
   .secbody{ padding-left:6px; border-left:2px solid #eef0f3; margin-left:6px; } .linehdr2{ display:flex; align-items:center; gap:8px; font-size:11px; text-transform:uppercase; letter-spacing:1px; color:#aab0bd; font-weight:700; margin:12px 0 8px; }
   .sticky{ margin-top:9px; background:#fff7c2; border:1px solid #f3e08a; border-radius:8px; padding:8px 10px; font-size:11.5px; color:#6b5e16; line-height:1.4; cursor:text; box-shadow:0 1px 2px rgba(120,100,0,.08); white-space:pre-wrap; } .sticky.empty{ background:#fffdf0; color:#bcae6a; font-style:italic; border-style:dashed; }
   .tagrow{ display:flex; gap:5px; align-items:center; margin:7px 0; flex-wrap:wrap; } .startag{ border:1px solid #e6c200; background:#fff; color:#b08900; border-radius:7px; padding:3px 8px; font-size:11px; font-weight:700; cursor:pointer; } .startag.on{ background:#fff3c4; } .urg{ border:1px solid #f0b9b9; background:#fff; border-radius:7px; padding:3px 7px; font-size:11px; cursor:pointer; filter:grayscale(1); opacity:.6; } .urg.on{ background:#fee2e2; filter:none; opacity:1; border-color:#ef9a9a; } .urgentcard{ box-shadow:0 0 0 2px #ef4444 inset; }
