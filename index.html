@@ -2527,7 +2527,8 @@ function openDetail(id){ const p=DB.products.find(x=>x.id===id); if(!p)return; c
   loadSpec(p.id, ov.querySelector('#dSpec')); }
 
 /* ---------- cards ---------- */
-function sticky(scope,id,notes){ const fn=scope==='page'?'editPageNotes':'editProdNotes'; return `<div class="sticky ${notes?'':'empty'}" onclick="${fn}('${id}')">${notes?esc(notes):'＋ note'}</div>`; }
+function editNoteInline(ev,scope,id){ ev.stopPropagation(); const o=scope==='page'?DB.pages.find(x=>x.id===id):DB.products.find(x=>x.id===id); if(!o)return; inlineEdit(ev.currentTarget, o.notes||'', true, v=>{ if(scope==='page')setPageNotes(id,v); else setProdNotes(id,v); }); }
+function sticky(scope,id,notes){ return `<div class="sticky ${notes?'':'empty'}" onclick="editNoteInline(event,'${scope}','${id}')">${notes?esc(notes):'＋ note'}</div>`; }
 function crossBadge(icon,label,status,has,pid){ return `<button class="xbadge${has?'':' none'}" title="${label}: ${has?LABELS[status]:'no track yet'} — open detail" onclick="event.stopPropagation();openDetail('${pid}')">${icon}${has?`<span class="pdot s-${status}"></span>`:'<span class="pcaret">–</span>'}</button>`; }
 function prodCard(p){ const ro=pkgStatus(p);
   return `<div class="card bg-${ro}" draggable="true" ondragstart="dragStart('product','${p.id}',event)" ondragend="dragEnd()">
