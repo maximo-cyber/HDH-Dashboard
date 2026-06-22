@@ -96,8 +96,6 @@ textarea{ flex:1; min-width:280px; min-height:80px; border:1px solid #d5d9e0; bo
   </div>
   </div><!--/stickytop-->
 
-  <div id="todaystrip" class="todaystrip"></div>
-
   <!-- PACKAGING -->
   <div id="packaging" class="pane">
     <div class="filterbar" id="fb-pkg"></div>
@@ -112,6 +110,7 @@ textarea{ flex:1; min-width:280px; min-height:80px; border:1px solid #d5d9e0; bo
 
   <!-- DAILY -->
   <div id="daily" class="pane hidden">
+    <div id="todaystrip" class="todaystrip"></div>
     <div class="dailybar">Sort:
       <select id="sortSel" class="sortsel" onchange="setSort(this.value)">
         <option value="manual">Manual</option>
@@ -2467,6 +2466,8 @@ function delPage(id){ const g=DB.pages.find(x=>x.id===id); confirmBox(`Delete "$
 function setTaskStatus(id,val){ const t=DB.tasks.find(x=>x.id===id); if(t.status===val)return; t.status=val; save(); render(); }
 function toggleMine(id){ const t=DB.tasks.find(x=>x.id===id); t.mine=!t.mine; save(); render(); }
 function toggleUrgent(id){ const t=DB.tasks.find(x=>x.id===id); t.urgent=!t.urgent; save(); render(); }
+function toggleDone(id){ const t=DB.tasks.find(x=>x.id===id); if(!t)return; t.done=!t.done; save(); render(); }
+function setToday(id,val){ const t=DB.tasks.find(x=>x.id===id); if(!t)return; t.today=val; save(); render(); }
 function cycleType(id){ const t=DB.tasks.find(x=>x.id===id); const i=TYPES.indexOf(t.type||'ops'); t.type=TYPES[(i+1)%TYPES.length]; save(); render(); }
 function addTask(owner){ askText("New "+(owner==='ideas'?'idea':'task'),"",title=>{ DB.tasks.push({id:"t_"+Date.now().toString(36),title,owner,status:"not-started",link:"",mine:owner==='ideas',urgent:false,type:'ops'}); save(); render(); }); }
 function delTask(id){ const t=DB.tasks.find(x=>x.id===id); confirmBox(`Delete "${t.title}"?`,()=>{ DB.tasks=DB.tasks.filter(x=>x.id!==id); save(); render(); }); }
@@ -2543,7 +2544,7 @@ function webCard(p){ const ro=webStatus(p); const hasWeb=(p.web||[]).length>0;
 function pageCard(g){ const ro=pageStatus(g);
   return `<div class="card bg-${ro}"><div class="chiprow">${overallChip('page',g.id)}<div class="topbtns"><button class="delbtn" onclick="delPage('${g.id}')">✕</button></div></div>
     <div class="cardtop"><h3>${esc(g.name)}</h3></div>${pillsHtml('page',g.id,g.items)}${sticky('page',g.id,g.notes)}</div>`; }
-function taskCard(t){ const link=t.link?`<span class="linktag">${esc(t.link)}</span>`:""; const type=t.type||'ops';
+function taskCard(t){
   const subs=t.subtasks||[]; const dn=subs.filter(s=>s.done).length; const folded=isCollapsed('task:'+t.id);
   let chk='';
   if(subs.length){ chk+=`<div class="checkhdr" onclick="toggleTaskFold('${t.id}')"><span class="caret">${folded?'▸':'▾'}</span>Checklist <span class="muted">${dn}/${subs.length}</span></div>`;
@@ -2554,14 +2555,12 @@ function taskCard(t){ const link=t.link?`<span class="linktag">${esc(t.link)}</s
   else { desc=`<button class="subadd2" onclick="addDescInline(event,'${t.id}')">＋ description</button>`; }
   const cardFolded=isCollapsed('cardfold:'+t.id);
   const dragattrs=`draggable="true" ondragstart="dragStart('task','${t.id}',event)" ondragend="dragEnd()" ondragover="event.preventDefault();event.stopPropagation();this.classList.add('insert')" ondragleave="this.classList.remove('insert')" ondrop="event.preventDefault();event.stopPropagation();this.classList.remove('insert');if(drag&&drag.kind==='task')moveTask(drag.id,'${t.id}','OWNER')"`;
-  const head=`<div class="cardtop"><button class="cardcaret" title="Fold / unfold this card" onclick="event.stopPropagation();toggleCardFold('${t.id}')">${cardFolded?'▸':'▾'}</button><div class="ttitle" title="Click to edit" onclick="editTaskTitleInline(event,'${t.id}')">${esc(t.title)}</div><button class="delbtn" onclick="delTask('${t.id}')">✕</button></div>`;
-  if(cardFolded){ const fsel=`<select class="sel s-${t.status}" style="width:auto;max-width:170px" onchange="setTaskStatus('${t.id}',this.value)" onclick="event.stopPropagation()">${ORDER.map(o=>`<option value="${o}" ${o===t.status?'selected':''}>${LABELS[o]}</option>`).join('')}</select>`;
-    return `<div class="tcard bg-${t.status} ${t.urgent?'urgentcard':''} folded" ${dragattrs}>${head}<div class="foldmeta">${fsel}${subs.length?`<span class="muted">✓ ${dn}/${subs.length}</span>`:''}${t.urgent?'<span class="muted">🔥</span>':''}</div></div>`; }
-  return `<div class="tcard bg-${t.status} ${t.urgent?'urgentcard':''}" ${dragattrs}>
+  const check=`<button class="taskcheck ${t.done?'on':''}" title="${t.done?'Mark not done':'Cross out (done)'}" onclick="event.stopPropagation();toggleDone('${t.id}')">${t.done?'☑':'☐'}</button>`;
+  const head=`<div class="cardtop"><button class="cardcaret" title="Fold / unfold this card" onclick="event.stopPropagation();toggleCardFold('${t.id}')">${cardFolded?'▸':'▾'}</button>${check}<div class="ttitle ${t.done?'doneT':''}" title="Click to edit" onclick="editTaskTitleInline(event,'${t.id}')">${esc(t.title)}</div><button class="delbtn" onclick="delTask('${t.id}')">✕</button></div>`;
+  if(cardFolded){ return `<div class="tcard ${t.done?'donecard':''} ${t.urgent?'urgentcard':''} folded" ${dragattrs}>${head}<div class="foldmeta">${subs.length?`<span class="muted">✓ ${dn}/${subs.length}</span>`:''}${t.urgent?'<span class="muted">🔥</span>':''}${t.mine?'<span class="muted">★</span>':''}</div></div>`; }
+  return `<div class="tcard ${t.done?'donecard':''} ${t.urgent?'urgentcard':''}" ${dragattrs}>
     ${head}
-    <div class="tagrow"><button class="startag ${t.mine?'on':''}" title="Mine" onclick="toggleMine('${t.id}')">★</button><button class="urg ${t.urgent?'on':''}" title="Urgent" onclick="toggleUrgent('${t.id}')">🔥</button><button class="ttag type-${type}" title="Type" onclick="cycleType('${t.id}')">${TYPE_LABEL[type]}</button></div>
-    <div class="row"><select class="sel s-${t.status}" onchange="setTaskStatus('${t.id}',this.value)" onclick="event.stopPropagation()">${ORDER.map(o=>`<option value="${o}" ${o===t.status?'selected':''}>${LABELS[o]}</option>`).join('')}</select></div>
-    ${link?`<div class="row" style="margin-top:6px">${link}<span></span></div>`:""}
+    <div class="tagrow"><button class="urg ${t.urgent?'on':''}" title="Urgent" onclick="toggleUrgent('${t.id}')">🔥</button><button class="startag ${t.mine?'on':''}" title="Mine" onclick="toggleMine('${t.id}')">★</button></div>
     <div class="descblock">${desc}</div>
     <div class="checkblock">${chk}</div></div>`; }
 
@@ -2595,22 +2594,23 @@ function renderWeb(){ const PDP_GROUPS=[["Hair Line",["hair"]],["Eyelash/Eyebrow
   if(!isCollapsed('web:pages')) h+=`<div class="grid">${DB.pages.filter(g=>visible(pageStatus(g))).map(pageCard).join("")||'<div class="muted" style="font-size:12px">None shown.</div>'}</div>`;
   document.getElementById('webbody').innerHTML=h; }
 function ownerLabel(o){ return o==='we'?'Design team':o==='factory'?'Factory':o==='hamid'?'Hamid':o==='ideas'?'Idea':o; }
-function autoItemsFor(owner){ const map={we:['designing'],factory:['producing-samples','in-production'],hamid:['needs-review']}; const want=map[owner]; if(!want)return []; const out=[];
+function autoItemsFor(owner){ const map={we:['not-started','designing'],factory:['producing-samples'],hamid:['needs-review']}; const want=map[owner]; if(!want)return []; const out=[];
   DB.products.forEach(p=>{ (p.packaging||[]).forEach(it=>{ if(want.includes(it.status))out.push({pid:p.id,name:p.name,label:it.label,status:it.status,tag:'packaging'}); }); (p.web||[]).forEach(it=>{ if(want.includes(it.status))out.push({pid:p.id,name:p.name,label:it.label,status:it.status,tag:'website'}); }); });
   DB.pages.forEach(g=>{ (g.items||[]).forEach(it=>{ if(want.includes(it.status))out.push({pid:null,name:g.name,label:it.label,status:it.status,tag:'page'}); }); });
   return out; }
 function autoRow(it){ const act=it.pid?`openDetail('${it.pid}')`:"setTab('web')"; return `<div class="autorow" onclick="${act}"><span class="pdot s-${it.status}"></span><span class="autonm">${esc(it.name)} — ${esc(it.label)}</span><span class="autotag">${esc(it.tag)}</span></div>`; }
 function renderDaily(){ LANES.forEach(o=>{ const items=sortItems(DB.tasks.filter(t=>t.owner===o)); const lane=document.getElementById(OWNER_LANE[o]); if(!lane)return;
   let html=items.map(t=>taskCard(t).replace(/'OWNER'/g,`'${o}'`)).join("")||`<div class="muted" style="font-size:12px">Drop here or add.</div>`;
-  const auto=autoItemsFor(o); if(auto.length){ html+=`<div class="autosec"><div class="autohdr">On the board <span class="muted" style="font-weight:400">(${auto.length})</span></div>${auto.map(autoRow).join("")}</div>`; }
+  const auto=autoItemsFor(o); if(auto.length){ const cap=15; const shown=auto.slice(0,cap); html+=`<div class="autosec"><div class="autohdr">On the board <span class="muted" style="font-weight:400">(${auto.length})</span></div>${shown.map(autoRow).join("")}${auto.length>cap?`<div class="automore">+ ${auto.length-cap} more</div>`:''}</div>`; }
   lane.innerHTML=html;
   const c=document.getElementById("c-"+o); if(c) c.textContent=items.length;
   lane.ondragover=e=>{ if(drag&&drag.kind==='task'){ e.preventDefault(); lane.classList.add('dragover'); } }; lane.ondragleave=()=>lane.classList.remove('dragover'); lane.ondrop=e=>{ lane.classList.remove('dragover'); if(drag&&drag.kind==='task') moveTask(drag.id,null,o); }; }); }
-function renderTodayStrip(){ const el=document.getElementById('todaystrip'); if(!el)return; const urg=DB.tasks.filter(t=>t.urgent&&t.status!=='approved');
-  if(!urg.length){ el.innerHTML=''; return; }
+function renderTodayStrip(){ const el=document.getElementById('todaystrip'); if(!el)return;
+  const today=DB.tasks.filter(t=>t.today);
   const card=t=>{ const subs=t.subtasks||[]; const dn=subs.filter(s=>s.done).length; const pct=subs.length?Math.round(dn/subs.length*100):null;
-    return `<div class="tsmini bg-${t.status}" onclick="setTab('daily')"><div class="tsm-cat">${esc(ownerLabel(t.owner))}</div><div class="tsm-title">${esc(t.title)}</div><div class="tsm-meta"><span class="pdot s-${t.status}"></span><span>${LABELS[t.status]}</span>${pct!=null?`<span class="tsm-pct">${pct}%</span>`:''}</div>${pct!=null?`<div class="tsm-bar"><span style="width:${pct}%"></span></div>`:''}</div>`; };
-  el.innerHTML=`<div class="tshead">🔥 In progress <span class="muted" style="font-weight:400">· ${urg.length}</span></div><div class="tsrow">${urg.map(card).join("")}</div>`; }
+    return `<div class="tsmini"><button class="tsm-x" title="Remove from today" onclick="setToday('${t.id}',false)">✕</button><div class="tsm-cat">${esc(ownerLabel(t.owner))}</div><div class="tsm-title ${t.done?'doneT':''}">${esc(t.title)}</div>${pct!=null?`<div class="tsm-meta"><div class="tsm-bar"><span style="width:${pct}%"></span></div><span class="tsm-pct">${pct}%</span></div>`:''}</div>`; };
+  el.innerHTML=`<div class="tshead">🔥 In progress — today <span class="muted" style="font-weight:400">· ${today.length}</span></div><div class="tsrow">${today.map(card).join("")}<div class="tsdrop">drag a task here</div></div>`;
+  el.ondragover=e=>{ if(drag&&drag.kind==='task'){ e.preventDefault(); el.classList.add('dragover'); } }; el.ondragleave=()=>el.classList.remove('dragover'); el.ondrop=e=>{ el.classList.remove('dragover'); if(drag&&drag.kind==='task') setToday(drag.id,true); }; }
 function render(){ ensure(); renderFilterbar(); renderPackaging(); renderWeb(); renderDaily(); renderTodayStrip(); }
 
 /* ---------- nav / tools ---------- */
@@ -2661,6 +2661,8 @@ function injectStyles(){ const css=`
   .autorow{ display:flex; align-items:center; gap:7px; padding:5px 7px; border-radius:7px; font-size:12px; color:#39404e; cursor:pointer; } .autorow:hover{ background:#f3f5f8; } .autonm{ flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } .autotag{ font-size:10px; color:#8a90a0; background:#eef1f5; padding:1px 6px; border-radius:6px; }
   .todaystrip{ margin:0 0 16px; } .todaystrip:empty{ display:none; } .tshead{ font-size:13px; font-weight:700; color:#39404e; margin-bottom:8px; } .tsrow{ display:flex; gap:10px; overflow-x:auto; padding-bottom:4px; }
   .tsmini{ min-width:200px; max-width:240px; flex:none; border:1px solid #e6e9ee; border-radius:12px; padding:10px 12px; cursor:pointer; } .tsm-cat{ font-size:10px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; color:#8a90a0; margin-bottom:4px; } .tsm-title{ font-size:13.5px; font-weight:600; color:#1f2733; margin-bottom:8px; } .tsm-meta{ display:flex; align-items:center; gap:6px; font-size:11px; color:#5b6472; } .tsm-pct{ margin-left:auto; font-weight:700; } .tsm-bar{ height:5px; background:#eef1f5; border-radius:4px; margin-top:8px; overflow:hidden; } .tsm-bar span{ display:block; height:100%; background:#14b8a6; }
+  .taskcheck{ border:none; background:none; cursor:pointer; font-size:15px; color:#9aa3b2; padding:0 2px; line-height:1; } .taskcheck.on{ color:#16a34a; } .ttitle.doneT{ text-decoration:line-through; color:#9aa3b2; } .tcard.donecard{ opacity:.55; }
+  .tsm-x{ float:right; border:none; background:none; cursor:pointer; color:#b8c0cc; font-size:11px; line-height:1; } .tsm-x:hover{ color:#ef4444; } .tsdrop{ min-width:150px; flex:none; border:1.5px dashed #d5dbe4; border-radius:12px; font-size:12px; color:#9aa3b2; display:flex; align-items:center; justify-content:center; padding:0 14px; } .automore{ font-size:11px; color:#8a90a0; padding:5px 7px; }
   .filterbar{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:12px; } .fblab{ font-size:12px; font-weight:700; color:#5b6472; } .fchip{ border:1px solid #d5d9e0; background:#fff; color:#5b6472; border-radius:20px; padding:4px 11px; font-size:11.5px; font-weight:600; cursor:pointer; } .fchip.on{ background:#1f2430; color:#fff; border-color:#1f2430; } .fchip:hover{ border-color:#9bb4f5; }
   .popmenu{ position:fixed; z-index:10000; background:#fff; border:1px solid #e0e4ea; border-radius:10px; box-shadow:0 10px 30px rgba(20,30,50,.22); padding:5px; min-width:190px; } .popitem{ display:flex; align-items:center; gap:8px; padding:7px 9px; border-radius:7px; font-size:12px; cursor:pointer; color:#39404e; } .popitem:hover{ background:#f0f2f5; } .popitem.sel{ font-weight:700; } .popitem.danger{ color:#dc2626; } .pdot{ width:12px; height:12px; border-radius:3px; flex:none; } .popdiv{ height:1px; background:#eef0f3; margin:4px 2px; } .popcap{ font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:#aab0bd; padding:5px 9px 3px; }
   .overlay{ position:fixed; inset:0; background:rgba(20,28,45,.32); display:flex; align-items:center; justify-content:center; z-index:9999; padding:20px; } .modal{ background:#fff; border-radius:12px; padding:18px; width:min(440px,92vw); box-shadow:0 12px 40px rgba(20,30,50,.25); } .modal.big{ width:min(620px,94vw); max-height:88vh; overflow:auto; } .modal .mlab{ font-size:14px; font-weight:650; margin-bottom:12px; color:#1f2430; } .modal input,.modal textarea{ width:100%; border:1px solid #d5d9e0; border-radius:8px; padding:9px 10px; font:inherit; margin-bottom:14px; } .modal textarea{ min-height:90px; resize:vertical; } .modal .mrow{ display:flex; justify-content:flex-end; gap:8px; }
